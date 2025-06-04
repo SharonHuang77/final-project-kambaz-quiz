@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 // import * as db from "./Database";
 import { useState } from "react";
 import { addCourse, deleteCourse, updateCourse } from "./Courses/reducer";
-import { enrollUser, unenrollUser } from "./Courses/enrollmentsReducer";
+import { enrollUser, unenrollUser } from "./Courses/enrollmentsReducer.tsx";
 
 
 
