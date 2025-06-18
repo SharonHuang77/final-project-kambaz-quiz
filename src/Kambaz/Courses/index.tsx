@@ -3,6 +3,8 @@ import CoursesNavigation from "./Navigation";
 import Home from "./Home";
 import Assignments from "./Assignments";
 import People from "./People/Table";
+import Quizzes from "./Quizzes";
+import QuizQuestions from "./Quizzes/QuizQuestion";
 import { Navigate, Route, Routes, useParams, useLocation } from "react-router";
 import { FaAlignJustify } from "react-icons/fa6";
 import { useSelector } from "react-redux";
@@ -32,7 +34,8 @@ export default function Courses() {
               <Route path="Zoom" element={<h2>Zoom</h2>} />
               <Route path="Assignments" element={<Assignments />} />
               <Route path="Assignments/:aid" element={<h2>Assignment Editor</h2>} />
-              <Route path="Quizs" element={<h2>Quizzes</h2>} />
+              <Route path="Quizzes" element={<Quizzes />} />
+              <Route path="Quizzes/:qid/Questions" element={<QuizQuestions />} />
               <Route path="Grades" element={<h2>Grades</h2>} />
               <Route path="People" element={<People />} />
             </Routes>
