@@ -27,6 +27,7 @@ export const createQuestion = async (quizId: string, question: any) => {
 
 export const updateQuestion = async (questionId: string, question: any) => {
   const questionData = { ...question };
+  console.log("Sending to server:", questionData);
   delete questionData.isNew;
   delete questionData.isEditing;
   
@@ -39,7 +40,7 @@ export const deleteQuestion = async (questionId: string) => {
   return response.data;
 };
 
-export const getQuiz = async (quizId: string) => {
-  const response = await axiosWithCredentials.get(`${QUIZZES_API}/${quizId}`);
-  return response.data;
-};
+// export const getQuiz = async (quizId: string) => {
+//   const response = await axiosWithCredentials.get(`${QUIZZES_API}/${quizId}`);
+//   return response.data;
+// };

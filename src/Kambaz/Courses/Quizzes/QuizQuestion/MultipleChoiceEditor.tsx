@@ -67,6 +67,8 @@ export default function MultipleChoiceEditor({
     setFormData(prev => ({ ...prev, correctAnswer: index }));
   };
 
+  console.log("Submitting question data:", question);
+
   const handleSave = () => {
     const questionData: Question = {
       ...question,
