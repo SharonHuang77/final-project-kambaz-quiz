@@ -5,6 +5,10 @@ import { Form, Button, Row, Card, Col, Nav } from "react-bootstrap";
 import { addQuiz, updateQuiz } from "./reducer.ts";
 import * as quizzesClient from "../../client.tsx";
 import type { RootState, Quiz } from "../../../types.ts";
+import { FaBan } from "react-icons/fa";
+import { Editor } from "@tinymce/tinymce-react";
+import { BsThreeDotsVertical } from "react-icons/bs";
+
 
 export default function QuizDetailEditor() {
   const { cid, qid } = useParams();
@@ -15,8 +19,11 @@ export default function QuizDetailEditor() {
 
   const isNewQuiz = !qid;
   const [activeTab] = useState("details");
+
+  const [editorContent, setEditorContent] = useState("");
+  
+
   const [editedQuiz, setEditedQuiz] = useState<Quiz>({
-    _id: qid || "",
     title: "Unnamed Quiz",
     course: cid || "",
     points: 0,
@@ -26,17 +33,21 @@ export default function QuizDetailEditor() {
     published: false,
     shuffleAnswers: false,
     timeLimit: false,
-    multipleAttempts: false
+    multipleAttempts: false,
+    description: ""
   });
   const [dueDate, setDueDate] = useState("");
   const [availableFromDate, setAvailableFromDate] = useState("");
   const [availableUntilDate, setAvailableUntilDate] = useState("");
 
   useEffect(() => {
-    if (!isNewQuiz && quiz) {setEditedQuiz({ ...quiz });
-    if (quiz.dueDate) setDueDate(quiz.dueDate);
-    if (quiz.availableFromDate) setAvailableFromDate(quiz.availableFromDate);
-    if (quiz.availableUntilDate) setAvailableUntilDate(quiz.availableUntilDate);
+    if (!isNewQuiz && quiz) {
+      setEditedQuiz({ ...quiz });
+      setEditorContent(quiz.description || "");
+
+      if (quiz.dueDate) setDueDate(quiz.dueDate);
+      if (quiz.availableFromDate) setAvailableFromDate(quiz.availableFromDate);
+      if (quiz.availableUntilDate) setAvailableUntilDate(quiz.availableUntilDate);
     }
   }, [quiz, isNewQuiz]);
 
@@ -52,7 +63,8 @@ export default function QuizDetailEditor() {
       dueDate,
       availableFromDate,
       availableUntilDate,
-      published: false 
+      published: false ,
+      description: editorContent,
     };
     if (isNewQuiz) {
         const newQuiz = await quizzesClient.createQuizForCourse(cid!, quizData);
@@ -77,7 +89,8 @@ export default function QuizDetailEditor() {
       dueDate,
       availableFromDate,
       availableUntilDate,
-      published: true 
+      published: true,
+      description: editorContent, 
     };
     if (isNewQuiz) {
       const newQuiz = await quizzesClient.createQuizForCourse(cid!, quizData);
@@ -93,10 +106,12 @@ export default function QuizDetailEditor() {
     }
   };  
 
-   
   const handleCancel = () => {
     navigate(`/Kambaz/Courses/${cid}/Quizzes`);
   };
+
+  
+
   if (!isNewQuiz && !quiz) return <div>Quiz not found.</div>;
 
   return (
@@ -106,14 +121,21 @@ export default function QuizDetailEditor() {
         <div className="d-flex align-items-center">
           <span className="me-3">Points {editedQuiz.points || 0}</span>
           <div className="d-flex align-items-center">
-            <Form.Check 
-              type="checkbox"
-              id="published-check"
-              label="Not Published"
-              checked={!editedQuiz.published}
-              onChange={(e) => handleChange("published", !e.target.checked)}
-              className="me-2"
-            />
+            <div 
+              className="d-flex align-items-center me-3"
+              style={{ 
+                opacity: editedQuiz.published ? 0.5 : 1,
+                transition: 'opacity 0.3s ease'
+              }}
+            >
+              <FaBan
+                className={`me-2 ${editedQuiz.published ? 'text-muted' : 'text-danger'}`} 
+              />
+              <span className={editedQuiz.published ? 'text-muted' : 'text-danger'}>
+                Not Published
+              </span>
+            </div>
+            <BsThreeDotsVertical />
             <Button variant="link" className="p-0">
               <i className="bi bi-three-dots-vertical"></i>
             </Button>
@@ -155,26 +177,26 @@ export default function QuizDetailEditor() {
 
           <Form.Group className="mb-3">
           <Form.Label>Quiz Instruction</Form.Label>
-          <div className="d-flex align-items-center mb-2 gap-2 flex-wrap">
-            <Form.Select size="sm" style={{ width: "80px" }} defaultValue="12pt">
-              <option>12pt</option>
-              <option>14pt</option>
-              <option>16pt</option>
-            </Form.Select>
-            <Form.Select size="sm" style={{ width: "100px" }} defaultValue="Paragraph">
-              <option>Paragraph</option>
-            </Form.Select>
-              <div className="btn-group btn-group-sm me-2" role="group">
-                <Button variant="light"><b>B</b></Button>
-                <Button variant="light"><i>I</i></Button>
-                <Button variant="light"><u>U</u></Button>
-                <Button variant="light">A</Button>
-                <Button variant="light">🎨</Button>
-                <Button variant="light" size="sm">T²</Button>
-                <Button variant="light" size="sm" className="ms-auto">⋮</Button>
-              </div>
-              <Form.Control as="textarea" rows={3} value={editedQuiz.description || ""} onChange={(e) => handleChange("description", e.target.value)} />
-          </div >
+          <Editor
+            apiKey="foeb8ni7rkbpo9kctear5mi485lcceuuqws0gaqtlegm4637"
+            value={editedQuiz.description}
+            init={{
+              height: 300,
+              menubar: true,
+              plugins: [
+                'advlist autolink lists link image charmap print preview anchor',
+                'searchreplace visualblocks code fullscreen',
+                'insertdatetime media table paste code help wordcount'
+              ],
+              toolbar:
+                'undo redo | formatselect | ' +
+                'bold italic underline forecolor backcolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help',
+              statusbar: true
+            }}
+            onEditorChange={(content) => handleChange("description", content)}/>
+
           </Form.Group>
             <Form.Group as={Row} className="mb-3">
               <Form.Label>Quiz Type</Form.Label>
@@ -206,10 +228,31 @@ export default function QuizDetailEditor() {
                   checked={editedQuiz.shuffleAnswers || false} 
                   onChange={(e) => handleChange("shuffleAnswers", e.target.checked)}
                   />
-                <Form.Check type="checkbox" id="wd-time-limit" label="Time Limit"
-                  checked={editedQuiz.timeLimit || false}
-                  onChange={(e) => handleChange("timeLimit", e.target.checked)}
-                /><hr />
+                <Form.Group as={Row} className="align-items-center mt-2">
+                <Col xs="auto">
+                  <Form.Check
+                    type="checkbox"
+                    id="wd-time-limit"
+                    label="Time Limit"
+                    checked={editedQuiz.timeLimit || false}
+                    onChange={(e) => handleChange("timeLimit", e.target.checked)}
+                  />
+                </Col>
+                <Col xs="auto">
+                  <Form.Control
+                    type="number"
+                    min={1}
+                    value={editedQuiz.timeLimitMinutes || ""}
+                    disabled={!editedQuiz.timeLimit}
+                    onChange={(e) => handleChange("timeLimitMinutes", parseInt(e.target.value))}
+                    placeholder="Minutes"
+                    style={{ width: "100px", display: "inline" }}
+                  />
+                </Col>
+                <Col xs="auto">
+                  <span className="text-muted">Minutes</span>
+                </Col>
+              </Form.Group><hr />
                 <Form.Check type="checkbox" id="wd-allow-multiple-ttempts" label="Allow Multiple Attempts" 
                   checked={editedQuiz.multipleAttempts || false}
                   onChange={(e) => handleChange("multipleAttempts", e.target.checked)}

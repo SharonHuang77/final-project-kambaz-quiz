@@ -29,7 +29,7 @@ export default function QuizDetailSummary() {
 
   return (
     <Container className="mt-4">
-     
+     {isFaculty && (
       <div className="d-flex justify-content-center mb-4">
         <Button 
           variant="outline-secondary" 
@@ -45,6 +45,7 @@ export default function QuizDetailSummary() {
         >Edit
         </Button>
       </div>
+     )}
       
       <Card className="p-4" style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h2 className="mb-4">{quiz.title || "Q1 - HTML"}</h2>

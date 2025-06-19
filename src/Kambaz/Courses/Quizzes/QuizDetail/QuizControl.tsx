@@ -27,12 +27,8 @@ export default function QuizListControl({ onAction }: QuizListControlProps) {
           Delete
         </Dropdown.Item>
         <Dropdown.Divider />
-        <Dropdown.Item onClick={() => onAction('publish')}>
-          Publish
-        </Dropdown.Item>
-        <Dropdown.Item onClick={() => onAction('unpublish')}>
-          Unpublish
-        </Dropdown.Item>
+        
+        
       </Dropdown.Menu>
     </Dropdown>
   );
