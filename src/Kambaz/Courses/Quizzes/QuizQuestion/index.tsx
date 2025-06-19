@@ -36,7 +36,6 @@ export default function QuizQuestionsEditor() {
     if (!qid) return;
     try {
       const questionsData = await questionsClient.getQuestions(qid);
-      console.log("🧪 Raw questions from DB:", questionsData);
       const validQuestions = (questionsData || []).map((q: Question) => ({
         ...q,
         isEditing: false
@@ -49,40 +48,21 @@ export default function QuizQuestionsEditor() {
     }
   };
 
-  // const createAndEditQuestion = async () => {
-  //   if (!isFaculty || !qid) return;
-  //   try {
-  //     const newQuestion = {
-  //       title: 'New Question',
-  //       type: 'multiple-choice',
-  //       question: 'New question text',
-  //       points: 1,
-  //       quiz: qid,
-  //       choices: ['', '', '', ''],
-  //       correctAnswer: 0,
-  //     };
-  //     const saved = await questionsClient.createQuestion(qid, newQuestion);
-  //     dispatch(addQuestion({ ...saved, isEditing: true }));
-  //     setEditingQuestion(saved._id);
-  //   } catch (error) {
-  //     console.error('Error creating question:', error);
-  //   }
-  // };
-
   const createAndEditQuestion = async () => {
     if (!isFaculty || !qid) return;
     try {
-      const newQuestion = {
+      const type: Question['type'] = 'multiple-choice';
+      let newQuestion: any = {
         title: 'New Question',
-        type: 'multiple-choice',
+        type,
         question: 'New question text',
         points: 1,
         quiz: qid,
         choices: ['', '', '', ''],
         correctAnswer: 0,
       };
+
       const saved = await questionsClient.createQuestion(qid, newQuestion);
-      if (!saved || !saved._id) throw new Error("Save failed"); // <- NEW LINE
       dispatch(addQuestion({ ...saved, isEditing: true }));
       setEditingQuestion(saved._id);
     } catch (error) {
@@ -105,7 +85,6 @@ export default function QuizQuestionsEditor() {
     if (!qid || !questionData._id) return;
     try {
       const { isEditing, ...toSave } = questionData;
-      console.log("🚀 Saving to DB:", toSave);
       const updated = await questionsClient.updateQuestion(questionData._id, toSave);
       const updatedQuestions = questions?.map((q: Question) =>
         q._id === questionData._id ? { ...updated, isEditing: false } : q
@@ -138,13 +117,38 @@ export default function QuizQuestionsEditor() {
     }
   };
 
+  const handleTypeChange = (questionId: string, newType: Question['type']) => {
+    const updatedQuestions = questions.map((q: Question) => {
+      if (q._id !== questionId) return q;
+
+      const updated: Question = { ...q, type: newType };
+
+      if (newType === 'multiple-choice') {
+        updated.choices = ['', '', '', ''];
+        updated.correctAnswer = 0;
+      } else if (newType === 'true-false') {
+        updated.correctAnswer = true;
+        delete updated.choices;
+      } else if (newType === 'fill-in-blank') {
+        updated.possibleAnswers = [''];
+        updated.caseSensitive = false;
+        delete updated.choices;
+      }
+
+      return updated;
+    });
+
+    dispatch(setQuestions(updatedQuestions));
+  };
+
   const renderQuestionEditor = (question: Question) => {
     if (!question || !question._id) return null;
     const commonProps = {
       question,
       onSave: handleSaveQuestion,
       onCancel: () => handleCancelEdit(question._id),
-      onDelete: () => handleDeleteQuestion(question._id)
+      onDelete: () => handleDeleteQuestion(question._id),
+      onTypeChange: handleTypeChange
     };
     switch (question.type) {
       case 'true-false': return <TrueFalseEditor key={`editor-${question._id}`} {...commonProps} />;
@@ -254,8 +258,6 @@ export default function QuizQuestionsEditor() {
     </div>
   );
 }
-
-
 
 
 
