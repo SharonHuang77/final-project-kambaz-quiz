@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Button, FormControl, InputGroup, ListGroup } from "react-bootstrap";
 import { FaPlus, FaSearch } from "react-icons/fa";
 import { BsGripVertical } from "react-icons/bs";
-import { BsThreeDotsVertical } from "react-icons/bs";
+//import { BsThreeDotsVertical } from "react-icons/bs";
 import AssignmentControl from "../Assignments/AssignmentControl";
 import { LuNotebookPen } from "react-icons/lu";
 import GreenCheckMarks from "./QuizDetail/GreenCheckMarks";
@@ -249,13 +249,13 @@ export default function Quizzes() {
         })}
       </ListGroup>
     </div>
-    {/* TEMPORARY DEBUG SECTION */}
+        {/* TEMPORARY DEBUG SECTION */}
         <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
           <Link to={`/Kambaz/Courses/${cid}/Quizzes/quiz123/Questions`}>
             <strong>[ GO TO QUESTIONS EDITOR ]</strong>
           </Link>
         </div>
-        </div>
+    </div>
     
   );
 }
