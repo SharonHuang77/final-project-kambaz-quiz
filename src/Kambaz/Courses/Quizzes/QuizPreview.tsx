@@ -21,6 +21,25 @@ export default function QuizPreview() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [autoSubmitted, setAutoSubmitted] = useState(false);
+
+  const [startTime] = useState(new Date());
+
+  const checkIfCorrect = (question: any, userAnswer: any) => {
+    if (!userAnswer && userAnswer !== 0 && userAnswer !== false) return false;
+    
+    switch (question.type) {
+      case "multiple-choice":
+        return userAnswer === question.correctAnswer;
+      case "true-false":
+        return userAnswer === question.correctAnswer;
+      case "fill-in-blank":
+        return question.acceptableAnswers?.some(
+          (ans: string) => ans.toLowerCase() === userAnswer?.toLowerCase()
+        );
+      default:
+        return false;
+        }
+  };
   
   useEffect(() => {
     const fetchQuizAndQuestions = async () => {
@@ -102,10 +121,24 @@ const handleAnswer = (qid: string, value: any) => {
 
     if (!isFaculty) {
       try {
+        // Calculate time spent
+        const endTime = new Date();
+        const timeSpent = Math.floor((endTime.getTime() - startTime.getTime()) / 1000); // in seconds
+        // Format answers to match the new schema
+        const formattedAnswers = questions.map((q: any) => ({
+          questionId: q._id,
+          answer: answers[q._id] || null,
+          isCorrect: checkIfCorrect(q, answers[q._id]),
+          pointsEarned: checkIfCorrect(q, answers[q._id]) ? q.points : 0
+        }));
+
         await quizzesClient.submitQuizResult(qid!, {
           studentId: currentUser._id,
-          answers,
+          answers: formattedAnswers,
           score: totalScore,
+          totalPoints: quiz.points,
+          timeSpent,
+          startedAt: startTime
         });
         console.log("Quiz submission saved to DB.");
       } catch (error) {
@@ -142,7 +175,7 @@ const handleAnswer = (qid: string, value: any) => {
   );
 
 
-  if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+  if (!quiz || questions.length === 0) {
     return (
       <Alert variant="warning">
         This quiz has no questions.
@@ -156,41 +189,6 @@ const handleAnswer = (qid: string, value: any) => {
   const currentQuestion = questions[currentQuestionIndex];
   const totalLimit = quiz.timeLimitMinutes ?? 20;
   const timeProgress = (elapsedSeconds / (totalLimit * 60)) * 100;
-
-
- 
-
- 
-
-  // const handleSubmit = async () => {
-  //   let total = 0;
-  //   quiz.questions.forEach((q: any) => {
-  //     const userAnswer = answers[q._id];
-  //     if (q.type === "MultipleChoice" && userAnswer === q.correctAnswer) total += q.points;
-  //     if (q.type === "TrueFalse" && userAnswer === q.correctAnswer) total += q.points;
-  //     if (
-  //       q.type === "FillBlank" &&
-  //       q.acceptableAnswers?.some((ans: string) => ans.toLowerCase() === userAnswer?.toLowerCase())
-  //     ) {
-  //       total += q.points;
-  //     }
-  //   });
-  //   setScore(total);
-  //   setSubmitted(true);
-
-  //   if (!isFaculty) {
-  //   try {
-  //   await quizzesClient.submitQuizResult(qid!, {
-  //     studentId: currentUser._id,
-  //     answers,
-  //     score: total,
-  //   });
-  //   console.log("Quiz submission saved to DB.");
-  //   } catch (error) {
-  //   console.error("Error saving quiz submission:", error);
-  // }}
-  // };
-
 
   return (
     <Row>
