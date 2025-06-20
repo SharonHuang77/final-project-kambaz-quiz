@@ -25,6 +25,7 @@ export interface Quiz {
   timeLimit?: boolean;
   multipleAttempts?: boolean;
   timeLimitMinutes?: number;
+  howManyAttempts?: number; // fix 
 
   availableFromDate?: string;
   availableUntilDate?: string;

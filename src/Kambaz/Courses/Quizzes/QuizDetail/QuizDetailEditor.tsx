@@ -34,6 +34,7 @@ export default function QuizDetailEditor() {
     shuffleAnswers: false,
     timeLimit: false,
     multipleAttempts: false,
+    howManyAttempts: 1,
     description: ""
   });
   const [dueDate, setDueDate] = useState("");
@@ -65,6 +66,7 @@ export default function QuizDetailEditor() {
       availableUntilDate,
       published: false ,
       description: editorContent,
+      howManyAttempts: editedQuiz.multipleAttempts ? (editedQuiz.howManyAttempts || 1) : 1
     };
     if (isNewQuiz) {
         const newQuiz = await quizzesClient.createQuizForCourse(cid!, quizData);
@@ -91,6 +93,7 @@ export default function QuizDetailEditor() {
       availableUntilDate,
       published: true,
       description: editorContent, 
+      howManyAttempts: editedQuiz.multipleAttempts ? (editedQuiz.howManyAttempts || 1) : 1
     };
     if (isNewQuiz) {
       const newQuiz = await quizzesClient.createQuizForCourse(cid!, quizData);
@@ -251,10 +254,42 @@ export default function QuizDetailEditor() {
                   <span className="text-muted">Minutes</span>
                 </Col>
               </Form.Group><hr />
-                <Form.Check type="checkbox" id="wd-allow-multiple-ttempts" label="Allow Multiple Attempts" 
-                  checked={editedQuiz.multipleAttempts || false}
-                  onChange={(e) => handleChange("multipleAttempts", e.target.checked)}
-                /><hr />
+
+              <Form.Group as={Row} className="align-items-center">
+                  <Col xs="auto">
+                    <Form.Check 
+                      type="checkbox" 
+                      id="wd-allow-multiple-attempts" 
+                      label="Allow Multiple Attempts" 
+                      checked={editedQuiz.multipleAttempts || false}
+                      onChange={(e) => {
+                        handleChange("multipleAttempts", e.target.checked);
+                        if (!e.target.checked) {
+                          handleChange("howManyAttempts", 1);
+                        }
+                      }}
+                    />
+                  </Col>
+                  <Col xs="auto">
+                    <Form.Control
+                      type="number"
+                      min={1}
+                      value={editedQuiz.howManyAttempts || 1}
+                      disabled={!editedQuiz.multipleAttempts}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value >= 1) {
+                          handleChange("howManyAttempts", value);
+                        }
+                      }}
+                      placeholder="Attempts"
+                      style={{ width: "100px", display: "inline" }}
+                    />
+                  </Col>
+                  <Col xs="auto">
+                    <span className="text-muted">Attempts</span>
+                  </Col>
+                </Form.Group><hr />
               </Card>
               </Col>        
             </Form.Group>
@@ -272,19 +307,27 @@ export default function QuizDetailEditor() {
 
               <Form.Group className="mb-3" controlId="wd-due-date">
                 <Form.Label>Due</Form.Label>
-                  <Form.Control type="date" value={dueDate ? new Date(dueDate).toISOString().split("T")[0] : ""} 
+                  <Form.Control type="datetime-local" 
+                  value={dueDate ? new Date(dueDate).toISOString().slice(0, 16) : ""} 
                     onChange={(e) => setDueDate(e.target.value) }/>
                   </Form.Group>
                   <Row>
                     <Col>
-                      <Form.Group className="mb-3" controlId="wd-available-from">Available From</Form.Group>
-                      <Form.Control type="date" value={availableFromDate ? new Date(availableFromDate).toISOString().split("T")[0] : ""} 
+                      <Form.Group className="mb-3" controlId="wd-available-from">
+                        <Form.Label>Available From</Form.Label>
+                        
+                      <Form.Control type="datetime-local" 
+                      value={availableFromDate ? new Date(availableFromDate).toISOString().slice(0, 16) : ""} 
                       onChange={(e) => setAvailableFromDate(e.target.value)}/>
+                      </Form.Group>
                     </Col>
                     <Col>                        
-                    <Form.Group className="mb-3" controlId="wd-available-until">Until</Form.Group>
-                      <Form.Control type="date" value={availableUntilDate ? new Date(availableUntilDate).toISOString().split("T")[0] : ""} 
+                    <Form.Group className="mb-3" controlId="wd-available-until">
+                      <Form.Label>Until</Form.Label>
+                      
+                      <Form.Control type="datetime-local" value={availableUntilDate ? new Date(availableUntilDate).toISOString().slice(0, 16) : ""} 
                         onChange={(e) => setAvailableUntilDate(e.target.value)}/>
+                    </Form.Group>
                     </Col>
                     
                   </Row> <hr />

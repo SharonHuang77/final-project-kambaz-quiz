@@ -66,7 +66,7 @@ export default function QuizQuestionsEditor() {
       dispatch(addQuestion({ ...saved, isEditing: true }));
       setEditingQuestion(saved._id);
     } catch (error) {
-      console.error('❌ Failed to create question on server:', error);
+      console.error('Failed to create question on server:', error);
       alert("Failed to save new question. Please ensure you're logged in as faculty.");
     }
   };
