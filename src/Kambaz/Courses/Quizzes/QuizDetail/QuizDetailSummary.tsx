@@ -1,5 +1,4 @@
 import { useParams, useNavigate } from "react-router-dom";
-
 import { useSelector } from "react-redux";
 import { Button, Card, Container, Row, Col } from "react-bootstrap";
 

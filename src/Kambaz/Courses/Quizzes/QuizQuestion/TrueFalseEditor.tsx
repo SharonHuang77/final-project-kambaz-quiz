@@ -22,13 +22,15 @@ interface TrueFalseEditorProps {
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
+  onTypeChange: (id: string, newType: Question['type']) => void;
 }
 
 export default function TrueFalseEditor({ 
   question, 
   onSave, 
   onCancel, 
-  onDelete 
+  onDelete,
+  onTypeChange
 }: TrueFalseEditorProps) {
   const [formData, setFormData] = useState({
     title: question.title || 'New Question',
@@ -53,42 +55,6 @@ export default function TrueFalseEditor({
     onSave(questionData);
   };
 
-  const handleTypeChange = (newType: string) => {
-    let updatedQuestion: Question;
-  
-    if (newType === 'multiple-choice') {
-      updatedQuestion = {
-        ...question,
-        title: formData.title,
-        type: 'multiple-choice',
-        points: formData.points,
-        question: formData.question,
-        choices: ['', '', '', ''],
-        correctAnswer: 0
-      };
-    } else if (newType === 'true-false') {
-      updatedQuestion = {
-        ...question,
-        title: formData.title,
-        type: 'true-false',
-        points: formData.points,
-        question: formData.question,
-        correctAnswer: true
-      };
-    } else {
-      updatedQuestion = {
-        ...question,
-        title: formData.title,
-        type: 'fill-in-blank',
-        points: formData.points,
-        question: formData.question,
-        possibleAnswers: [''],
-        caseSensitive: false
-      };
-    }
-  
-    onSave(updatedQuestion); // Save with updated type
-  };
 
   return (
     <div className="border rounded p-4 mb-4 bg-white">
@@ -99,7 +65,7 @@ export default function TrueFalseEditor({
             <Form.Label>Question Type:</Form.Label>
             <Form.Select
               value={formData.type}
-              onChange={(e) => handleTypeChange(e.target.value)}
+              onChange={(e) => onTypeChange(question._id, e.target.value as Question['type'])}
             >
               <option value="multiple-choice">Multiple Choice</option>
               <option value="true-false">True/False</option>

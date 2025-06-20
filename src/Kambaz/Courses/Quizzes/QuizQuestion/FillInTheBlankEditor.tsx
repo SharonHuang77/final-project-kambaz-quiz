@@ -22,13 +22,15 @@ interface FillInTheBlankEditorProps {
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
+  onTypeChange: (id: string, newType: Question['type']) => void;
 }
 
 export default function FillInTheBlankEditor({ 
   question, 
   onSave, 
   onCancel, 
-  onDelete 
+  onDelete,
+  onTypeChange
 }: FillInTheBlankEditorProps) {
   const [formData, setFormData] = useState({
     title: question.title || 'New Question',
@@ -81,35 +83,7 @@ export default function FillInTheBlankEditor({
     };
     onSave(questionData);
   };
-  const handleTypeChange = (newType: string) => {
-    if (newType === 'multiple-choice') {
-      setFormData({
-        title: formData.title,
-        type: 'multiple-choice' as const,
-        points: formData.points,
-        question: formData.question,
-        choices: ['', '', '', ''],
-        correctAnswer: 0
-      } as any);
-    } else if (newType === 'true-false') {
-      setFormData({
-        title: formData.title,
-        type: 'true-false' as const,
-        points: formData.points,
-        question: formData.question,
-        correctAnswer: true
-      } as any);
-    } else if (newType === 'fill-in-blank') {
-      setFormData({
-        title: formData.title,
-        type: 'fill-in-blank' as const,
-        points: formData.points,
-        question: formData.question,
-        possibleAnswers: [''],
-        caseSensitive: false
-      } as any);
-    }
-  };
+
 
   return (
     <div className="border rounded p-4 mb-4 bg-white">
@@ -120,7 +94,7 @@ export default function FillInTheBlankEditor({
             <Form.Label>Question Type:</Form.Label>
             <Form.Select
               value={formData.type}
-              onChange={(e) => handleTypeChange(e.target.value)}
+              onChange={(e) => onTypeChange(question._id, e.target.value as Question['type'])}
             >
               <option value="multiple-choice">Multiple Choice</option>
               <option value="true-false">True/False</option>

@@ -21,13 +21,15 @@ interface MultipleChoiceEditorProps {
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
+  onTypeChange: (id: string, newType: Question['type']) => void;
 }
 
 export default function MultipleChoiceEditor({ 
   question, 
   onSave, 
   onCancel, 
-  onDelete 
+  onDelete,
+  onTypeChange
 }: MultipleChoiceEditorProps) {
   const [formData, setFormData] = useState({
     title: question.title || 'New Question',
@@ -67,6 +69,8 @@ export default function MultipleChoiceEditor({
     setFormData(prev => ({ ...prev, correctAnswer: index }));
   };
 
+  console.log("Submitting question data:", question);
+
   const handleSave = () => {
     const questionData: Question = {
       ...question,
@@ -75,35 +79,6 @@ export default function MultipleChoiceEditor({
     onSave(questionData);
   };
 
-  const handleTypeChange = (newType: string) => {
-    if (newType === 'multiple-choice') {
-      setFormData({
-        title: formData.title,
-        type: 'multiple-choice',
-        points: formData.points,
-        question: formData.question,
-        choices: ['', '', '', ''],
-        correctAnswer: 0
-      } as any);
-    } else if (newType === 'true-false') {
-      setFormData({
-        title: formData.title,
-        type: 'true-false',
-        points: formData.points,
-        question: formData.question,
-        correctAnswer: true
-      } as any);
-    } else if (newType === 'fill-in-blank') {
-      setFormData({
-        title: formData.title,
-        type: 'fill-in-blank',
-        points: formData.points,
-        question: formData.question,
-        possibleAnswers: [''],
-        caseSensitive: false
-      } as any);
-    }
-  };
 
   const choices = Array.isArray(formData.choices) ? formData.choices : [];
 
@@ -114,8 +89,8 @@ export default function MultipleChoiceEditor({
           <Col md={6}>
             <Form.Label>Question Type:</Form.Label>
             <Form.Select
-              value={formData.type}
-              onChange={(e) => handleTypeChange(e.target.value)}
+              value={question.type}
+              onChange={(e) => onTypeChange(question._id, e.target.value as Question['type'])}
             >
               <option value="multiple-choice">Multiple Choice</option>
               <option value="true-false">True/False</option>

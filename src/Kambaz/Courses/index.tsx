@@ -10,6 +10,7 @@ import { FaAlignJustify } from "react-icons/fa6";
 import { useSelector } from "react-redux";
 import QuizDetailEditor from "./Quizzes/QuizDetail/QuizDetailEditor";
 import QuizDetailSummary from "./Quizzes/QuizDetail/QuizDetailSummary";
+import QuizPreview from "./Quizzes/QuizPreview";
 
 
 export default function Courses() {
@@ -43,6 +44,8 @@ export default function Courses() {
               <Route path="Quizzes/Editor" element={<QuizDetailEditor />} />                   <Route path="Quizzes/QuizDetailSummary" element={<QuizDetailSummary />} />
               <Route path="Quizzes/:qid" element={<QuizDetailSummary />} />
               <Route path="Quizzes/:qid/Editor" element={<QuizDetailEditor />} />  
+              <Route path="Quizzes/:qid/Preview" element={<QuizPreview />} />
+              <Route path="Quizzes/:qid/Take" element={<QuizPreview />}/>
             </Routes>
         </div>
       </div>
