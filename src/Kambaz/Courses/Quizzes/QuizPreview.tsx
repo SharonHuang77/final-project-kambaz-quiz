@@ -140,6 +140,7 @@ const handleAnswer = (qid: string, value: any) => {
           timeSpent,
           startedAt: startTime
         });
+        navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/Results/${currentUser._id}`);
         console.log("Quiz submission saved to DB.");
       } catch (error) {
         console.error("Error saving quiz submission:", error);

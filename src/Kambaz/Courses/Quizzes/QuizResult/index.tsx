@@ -1,89 +1,38 @@
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, X, Clock } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import * as quizzesResultClient from './client';
+import type { QuizResultData } from "../../../types.ts";
+
 
 export default function QuizResults() {
-  const [quizData] = useState({
-    title: "Q1",
-    dueDate: "May 19 at 11:59pm",
-    points: 29,
-    totalQuestions: 11,
-    availablePeriod: "May 13 at 12am - May 19 at 11:59pm",
-    timeLimit: "20 Minutes",
-    multipleAttempts: true,
-    maxAttempts: 3,
-    instructions: {
-      title: "Asynchronous Courses",
-      guidelines: [
-        "Exams will be accessible for a one-week period.",
-        "Exams must be submitted within one week of their release.",
-        "Correct answers will be provided one day after the submission deadline."
-      ],
-      halfSemesterTerms: "Given the accelerated pace of half-semester courses like Summer 1 and Summer 2"
-    },
-    lockDate: "May 19 at 11:59pm",
-    currentAttempt: {
-      attemptNumber: 1,
-      score: 26,
-      totalPoints: 29,
-      timeUsed: "3 minutes",
-      submittedDate: "May 14 at 4:11pm",
-      status: "completed"
-    },
-    attemptHistory: [
-      {
-        attempt: 1,
-        score: 26,
-        totalPoints: 29,
-        timeUsed: "3 minutes",
-        date: "May 14 at 4:11pm"
-      }
-    ],
-    questions: [
-      {
-        id: 1,
-        points: 1,
-        question: "An HTML label element can be associated with an HTML input element by setting their id attributes to the same value.",
-        explanation: "The resulting effect is that when you click on the label text, the input element receives focus as if you had click on the input element itself",
-        studentAnswer: "True",
-        correctAnswer: "True",
-        isCorrect: true,
-        type: "true-false"
-      },
-      {
-        id: 2, 
-        points: 2,
-        question: "Which of the following CSS properties is used to control the spacing between characters in text?",
-        options: ["letter-spacing", "word-spacing", "line-height", "text-indent"],
-        studentAnswer: "word-spacing",
-        correctAnswer: "letter-spacing",
-        isCorrect: false,
-        type: "multiple-choice"
-      },
-      {
-        id: 3,
-        points: 3,
-        question: "What does HTML stand for?",
-        studentAnswer: "HyperText Markup Language",
-        correctAnswer: "HyperText Markup Language",
-        isCorrect: true,
-        type: "short-answer"
-      },
-      {
-        id: 4,
-        points: 1,
-        question: "CSS stands for Cascading Style Sheets.",
-        studentAnswer: "False",
-        correctAnswer: "True",
-        isCorrect: false,
-        type: "true-false"
-      }
-    ]
-  });
+  const { qid, studentId } = useParams<{ qid: string; studentId: string }>();
+  const [quizData, setQuizData] = useState<QuizResultData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const getScorePercentage = () => {
-    return Math.round((quizData.currentAttempt.score / quizData.currentAttempt.totalPoints) * 100);
-  };
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {;
+        const results = await quizzesResultClient.fetchQuizResults(qid!, studentId!);
+        setQuizData(results);
+      } catch (error) {
+        setQuizData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    if (qid && studentId) {
+      fetchResults();
+    } else {
+      console.warn("❗ Missing qid or studentId:", { qid, studentId });
+    }
+  }, [qid, studentId]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!quizData) return <div>No results found.</div>;
 
   const canRetakeQuiz = () => {
     return quizData.multipleAttempts && quizData.attemptHistory.length < quizData.maxAttempts;
@@ -117,7 +66,6 @@ export default function QuizResults() {
           <br />
           
           <h3>{quizData.instructions.title}</h3>
-          <p className="text-muted">For asynchronous courses, please note the following guidelines:</p>
           <ul className="text-muted">
             {quizData.instructions.guidelines.map((guideline, index) => (
               <li key={index}>{guideline}</li>
@@ -126,12 +74,7 @@ export default function QuizResults() {
           
           <br />
           
-          <h3>Half Semester Terms</h3>
-          <p className="text-muted">{quizData.instructions.halfSemesterTerms}</p>
-          
-          <br />
-          
-          <p className="text-muted">This quiz was locked {quizData.lockDate}.</p>
+          <p className="text-muted">This quiz was locked until {quizData.lockDate}.</p>
           
           <br /><br />
 
@@ -183,9 +126,9 @@ export default function QuizResults() {
                 {/* Question Header */}
                 <div className="bg-secondary text-black p-3">
                   <div className="d-flex justify-content-between align-items-center">
-                    <h3 className="mb-0">Question {question.id}</h3>
+                    <h3 className="mb-0">Question {question.title}</h3>
                     <div className="d-flex align-items-center">
-                      <span className="me-3">{question.points} / {question.points} pts</span>
+                      <span className="me-3">{question.earnedPoints} / {question.maxPoints} pts</span>
                       {question.isCorrect ? (
                         <span className="badge bg-success">
                           <Check size={16} /> Correct!
@@ -208,124 +151,102 @@ export default function QuizResults() {
                   )}
                   
                   <br />
-
-                  {/* Answer Display */}
+                  {/* Answer Display - Fixed Version */}
                   {question.type === 'multiple-choice' && question.options && (
                     <div>
-                      {question.options.map((option, index) => (
-                        <div key={index} className={`p-2 mb-2 ${
-                          option === question.correctAnswer
-                            ? 'bg-success bg-opacity-25 border-start border-success border-4'
-                            : option === question.studentAnswer && !question.isCorrect
-                            ? 'bg-danger bg-opacity-25 border-start border-danger border-4'
-                            : 'bg-light border-start border-secondary border-4'
-                        }`}>
-                          <div className="d-flex justify-content-between align-items-center">
-                            <div className="d-flex align-items-center">
-                              <input 
-                                type="radio" 
-                                name={`question-${question.id}`}
-                                checked={option === question.studentAnswer}
-                                disabled
-                                className="me-2"
-                              />
-                              <span>{option}</span>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              {option === question.studentAnswer && (
-                                <span className="badge bg-secondary me-2">Your Answer</span>
-                              )}
-                              {option === question.correctAnswer && (
-                                <>
-                                  <span className="badge bg-success me-2">Correct Answer</span>
-                                  <Check size={16} className="text-success" />
-                                </>
-                              )}
-                              {option === question.studentAnswer && !question.isCorrect && (
-                                <X size={16} className="text-danger" />
-                              )}
+                      {question.options.map((option, index) => {
+                        const isStudentAnswer = option === question.studentAnswer;
+                        const isCorrectAnswer = option === question.correctAnswer;
+                        const isWrongSelection = isStudentAnswer && !question.isCorrect;
+                        
+                        return (
+                          <div key={index} className={`p-2 mb-2 ${
+                            isCorrectAnswer
+                              ? 'bg-success bg-opacity-25 border-start border-success border-4'
+                              : isWrongSelection
+                              ? 'bg-danger bg-opacity-25 border-start border-danger border-4'
+                              : 'bg-light border-start border-secondary border-4'
+                          }`}>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <div className="d-flex align-items-center">
+                                <input 
+                                  type="radio" 
+                                  name={`question-${question.id}`}
+                                  checked={isStudentAnswer}
+                                  disabled
+                                  className="me-2"
+                                />
+                                <span>{option}</span>
+                              </div>
+                              <div className="d-flex align-items-center">
+                                {isStudentAnswer && (
+                                  <span className="badge bg-secondary me-2">Your Answer</span>
+                                )}
+                                {isCorrectAnswer && (
+                                  <>
+                                    <span className="badge bg-success me-2">Correct Answer</span>
+                                    <Check size={16} className="text-success" />
+                                  </>
+                                )}
+                                {isWrongSelection && (
+                                  <X size={16} className="text-danger" />
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
                   {question.type === 'true-false' && (
                     <div>
-                      <div className={`p-2 mb-2 ${
-                        question.correctAnswer === 'True'
-                          ? 'bg-success bg-opacity-25 border-start border-success border-4'
-                          : question.studentAnswer === 'True' && !question.isCorrect
-                          ? 'bg-danger bg-opacity-25 border-start border-danger border-4'
-                          : 'bg-light border-start border-secondary border-4'
-                      }`}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="d-flex align-items-center">
-                            <input 
-                              type="radio" 
-                              name={`question-${question.id}`}
-                              checked={question.studentAnswer === 'True'}
-                              disabled
-                              className="me-2"
-                            />
-                            <span>True</span>
+                      {['True', 'False'].map((option) => {
+                        const isStudentAnswer = option === question.studentAnswer;
+                        const isCorrectAnswer = option === question.correctAnswer;
+                        const isWrongSelection = isStudentAnswer && !question.isCorrect;
+                        
+                        return (
+                          <div key={option} className={`p-2 mb-2 ${
+                            isCorrectAnswer
+                              ? 'bg-success bg-opacity-25 border-start border-success border-4'
+                              : isWrongSelection
+                              ? 'bg-danger bg-opacity-25 border-start border-danger border-4'
+                              : 'bg-light border-start border-secondary border-4'
+                          }`}>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <div className="d-flex align-items-center">
+                                <input 
+                                  type="radio" 
+                                  name={`question-${question.id}`}
+                                  checked={isStudentAnswer}
+                                  disabled
+                                  className="me-2"
+                                />
+                                <span>{option}</span>
+                              </div>
+                              <div className="d-flex align-items-center">
+                                {isStudentAnswer && (
+                                  <span className="badge bg-secondary me-2">Your Answer</span>
+                                )}
+                                {isCorrectAnswer && (
+                                  <>
+                                    <span className="badge bg-success me-2">Correct Answer</span>
+                                    <Check size={16} className="text-success" />
+                                  </>
+                                )}
+                                {isWrongSelection && (
+                                  <X size={16} className="text-danger" />
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="d-flex align-items-center">
-                            {question.studentAnswer === 'True' && (
-                              <span className="badge bg-secondary me-2">Your Answer</span>
-                            )}
-                            {question.correctAnswer === 'True' && (
-                              <>
-                                <span className="badge bg-success me-2">Correct Answer</span>
-                                <Check size={16} className="text-success" />
-                              </>
-                            )}
-                            {question.studentAnswer === 'True' && !question.isCorrect && (
-                              <X size={16} className="text-danger" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className={`p-2 mb-2 ${
-                        question.correctAnswer === 'False'
-                          ? 'bg-success bg-opacity-25 border-start border-success border-4'
-                          : question.studentAnswer === 'False' && !question.isCorrect
-                          ? 'bg-danger bg-opacity-25 border-start border-danger border-4'
-                          : 'bg-light border-start border-secondary border-4'
-                      }`}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="d-flex align-items-center">
-                            <input 
-                              type="radio" 
-                              name={`question-${question.id}`}
-                              checked={question.studentAnswer === 'False'}
-                              disabled
-                              className="me-2"
-                            />
-                            <span>False</span>
-                          </div>
-                          <div className="d-flex align-items-center">
-                            {question.studentAnswer === 'False' && (
-                              <span className="badge bg-secondary me-2">Your Answer</span>
-                            )}
-                            {question.correctAnswer === 'False' && (
-                              <>
-                                <span className="badge bg-success me-2">Correct Answer</span>
-                                <Check size={16} className="text-success" />
-                              </>
-                            )}
-                            {question.studentAnswer === 'False' && !question.isCorrect && (
-                              <X size={16} className="text-danger" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
                   )}
 
-                  {question.type === 'short-answer' && (
+                  {question.type === 'fill-in-blank' && (
                     <div>
                       <p><strong>Your Answer:</strong></p>
                       <div className={`p-2 mb-2 ${
@@ -334,28 +255,42 @@ export default function QuizResults() {
                           : 'bg-danger bg-opacity-25 border-start border-danger border-4'
                       }`}>
                         <div className="d-flex justify-content-between align-items-center">
-                          <span>{question.studentAnswer}</span>
-                          {question.isCorrect ? (
-                            <Check size={16} className="text-success" />
-                          ) : (
-                            <X size={16} className="text-danger" />
-                          )}
+                          <span>{question.studentAnswer || 'No answer provided'}</span>
+                          <div className="d-flex align-items-center">
+                            <span className="badge bg-secondary me-2">Your Answer</span>
+                            {question.isCorrect ? (
+                              <Check size={16} className="text-success" />
+                            ) : (
+                              <X size={16} className="text-danger" />
+                            )}
+                          </div>
                         </div>
                       </div>
                       
-                      {!question.isCorrect && (
+                      {!question.isCorrect && question.possibleAnswers && Array.isArray(question.possibleAnswers) && (
                         <div>
-                          <p><strong>Correct Answer:</strong></p>
+                          <p><strong>Accepted Answers:</strong></p>
                           <div className="p-2 mb-2 bg-success bg-opacity-25 border-start border-success border-4">
                             <div className="d-flex justify-content-between align-items-center">
-                              <span>{question.correctAnswer}</span>
-                              <Check size={16} className="text-success" />
+                              <span>{question.possibleAnswers.join(', ')}</span>
+                              <div className="d-flex align-items-center">
+                                <span className="badge bg-success me-2">Accepted Answers</span>
+                                <Check size={16} className="text-success" />
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
+
+                      {/* Show possible answers even when correct, for reference */}
+                      {question.isCorrect && question.possibleAnswers && Array.isArray(question.possibleAnswers) && question.possibleAnswers.length > 1 && (
+                        <div className="mt-2">
+                          <p className="text-muted"><small><strong>Other accepted answers:</strong> {question.possibleAnswers.filter(ans => ans !== question.studentAnswer).join(', ')}</small></p>
+                        </div>
+                      )}
                     </div>
                   )}
+                  
                 </div>
               </div>
               <br />

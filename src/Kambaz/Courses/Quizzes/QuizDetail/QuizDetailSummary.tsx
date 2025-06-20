@@ -147,6 +147,13 @@ export default function QuizDetailSummary() {
             >
               Start Quiz
             </Button>
+            <Button 
+              variant="success" 
+              size="lg"
+              onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/Results/${currentUser._id}`)}
+            >
+              View Results
+            </Button>
           </div>
         )}
       </Card>

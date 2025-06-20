@@ -96,15 +96,28 @@ export default function QuizQuestionsEditor() {
   };
 
   const handleSaveQuestion = async (questionData: Question) => {
+    console.log('🚀 handleSaveQuestion called with:', questionData);
     if (!qid || !questionData._id) return;
   
     try {
       const { isEditing, _id, ...toSave } = questionData;
+
+          // Only log for fill-in-blank questions
+          if (toSave.type === "fill-in-blank") {
+            console.log('=== Fill-in-Blank Debug ===');
+            console.log('Question:', toSave.question);
+            console.log('Type:', toSave.type);
+            console.log('Correct Answer:', toSave.correctAnswer);
+            console.log('Correct Answer Type:', typeof toSave.correctAnswer);
+            console.log('Is Empty?', !toSave.correctAnswer);
+            console.log('========================');
+          }
   
       let updated;
       if (_id.startsWith("temp-")) {
         // It's a new question → create
         updated = await questionsClient.createQuestion(qid, toSave);
+        
       } else {
         // It's an existing question → update
         updated = await questionsClient.updateQuestion(_id, toSave);
