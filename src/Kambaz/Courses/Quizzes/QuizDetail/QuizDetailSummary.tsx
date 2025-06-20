@@ -1,6 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Button, Card, Container, Row, Col } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Button, Card, Container, Row, Col, Alert } from "react-bootstrap";
+import * as quizzesClient from "../../client";
+import * as questionsClient from "../QuizQuestion/client";
 
 export default function QuizDetailSummary() {
   const { cid, qid } = useParams();
@@ -11,7 +14,51 @@ export default function QuizDetailSummary() {
   const { currentUser } = useSelector((state: any) => state.accountReducer);
   const isFaculty = currentUser?.role === "FACULTY";
 
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [canTakeQuiz, setCanTakeQuiz] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [totalPoints, setTotalPoints] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!qid || !quiz || isFaculty) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+       // Fetch questions to calculate total points
+       const questions = await questionsClient.getQuestions(qid);
+         if (questions && questions.length > 0) {
+           const total = questions.reduce((sum: number, question: any) => {
+            return sum + (question.points || 0);
+           }, 0);
+           setTotalPoints(total);
+          } else {
+            setTotalPoints(0);
+           }
+        
+         // Fetch student's attempt count
+        if (currentUser) {
+          const results = await quizzesClient.findQuizResultsForStudent(qid, currentUser._id);
+          const attempts = results?.length || 0;
+          setAttemptCount(attempts);
+          
+          // Check if student can take quiz
+          const allowedAttempts = quiz.howManyAttempts || 1;
+          setCanTakeQuiz(attempts < allowedAttempts);
+        }
+      } catch (error) {
+        console.error("Error fetching attempt data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [qid, quiz, currentUser, isFaculty]);
+
   if (!quiz) return <div>Quiz not found.</div>;
+
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -25,6 +72,15 @@ export default function QuizDetailSummary() {
     
     return `${month} ${day} at ${displayHours}:${displayMinutes}${ampm}`;
   };
+
+  const allowedAttempts = quiz.howManyAttempts || 1;
+  const nextAttemptNumber = attemptCount + 1;
+  // Check if quiz is available
+  const now = new Date();
+  const availableFrom = new Date(quiz.availableFromDate);
+  const dueDate = new Date(quiz.dueDate);
+  const isAvailable = now >= availableFrom && now <= dueDate;
+
 
   return (
     <Container className="mt-4">
@@ -56,7 +112,7 @@ export default function QuizDetailSummary() {
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">Points</Col>
-          <Col sm={8}>{quiz.points || 0}</Col>
+          <Col sm={8}>{totalPoints || quiz.points || 0}</Col>
         </Row>
         
         <Row className="mb-3">
@@ -86,12 +142,12 @@ export default function QuizDetailSummary() {
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">Show Correct Answers</Col>
-          <Col sm={8}>{quiz.showCorrectAnswers || "Immediately"}</Col>
+          <Col sm={8}>{quiz.showCorrectAnswers ? "Yes" : "No"}</Col>
         </Row>
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">One Question at a Time</Col>
-          <Col sm={8}>{quiz.oneQuestionAtTime || "Yes"}</Col>
+          <Col sm={8}>{quiz.oneQuestionAtTime ? "Yes" : "No"}</Col>
         </Row>
         
         <Row className="mb-3">
@@ -106,12 +162,12 @@ export default function QuizDetailSummary() {
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">Webcam Required</Col>
-          <Col sm={8}>{quiz.webcamRequired || "No"}</Col>
+          <Col sm={8}>{quiz.webcamRequired ? "Yes" : "No"}</Col>
         </Row>
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">Lock Questions After Answering</Col>
-          <Col sm={8}>{quiz.lockQuestionsAfterAnswering || "No"}</Col>
+          <Col sm={8}>{quiz.lockQuestionsAfterAnswering ? "Yes" : "No"}</Col>
         </Row>
         
         
@@ -131,24 +187,71 @@ export default function QuizDetailSummary() {
               <tr>
                 <td>{quiz.dueDate ? formatDateTime(quiz.dueDate) : "Sep 21 at 1pm"}</td>
                 <td>{quiz.assignTo || "Everyone"}</td>
-                <td>{quiz.availableFromDate ? formatDateTime(quiz.availableFromDate) : "Sep 21 at 11:40am"}</td>
-                <td>{quiz.availableUntilDate ? formatDateTime(quiz.availableUntilDate) : "Sep 21 at 1pm"}</td>
+                <td>{quiz.availableFromDate ? formatDateTime(quiz.availableFromDate) : "-"}</td>
+                <td>{quiz.availableUntilDate ? formatDateTime(quiz.availableUntilDate) : "-"}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        
-        {!isFaculty && (
-          <div className="text-center mt-4">
+
+        {!isFaculty && !loading && (
+          <>
+            <div className="text-center mt-4 mb-3">
+              <h6>This is your attempt: {nextAttemptNumber}</h6>
+              <p className="text-muted mb-0">
+                You are allowed {allowedAttempts} attempt{allowedAttempts !== 1 ? 's' : ''}
+              </p>
+            </div>
+            
+          <div className="text-center mt-4 d-flext gap-2">
             <Button 
               variant="success" 
               size="lg"
               onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/Take`)}
+              disabled={!canTakeQuiz || !isAvailable || !quiz.published}
+                style={{
+                  opacity: (!canTakeQuiz || !isAvailable || !quiz.published) ? 0.5 : 1,
+                  cursor: (!canTakeQuiz || !isAvailable || !quiz.published) ? 'not-allowed' : 'pointer'
+                }}
             >
               Start Quiz
             </Button>
+
+            {attemptCount > 0 && (
+                <Button
+                  variant="outline-primary"
+                  size="lg"
+                  onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/results`)}
+                >
+                  View Results
+                </Button>
+            )}
+
           </div>
+          {!canTakeQuiz && attemptCount >= allowedAttempts && (
+              <Alert variant="warning" className="mt-3 mb-0">
+                You have used all {allowedAttempts} attempt{allowedAttempts !== 1 ? 's' : ''} for this quiz.
+              </Alert>
+            )}
+            {!isAvailable && now < availableFrom && (
+              <Alert variant="info" className="mt-3 mb-0">
+                This quiz is not available until {formatDateTime(quiz.availableFromDate)}.
+              </Alert>
+            )}
+            {!isAvailable && now > dueDate && (
+              <Alert variant="danger" className="mt-3 mb-0">
+                This quiz is closed. The due date was {formatDateTime(quiz.dueDate)}.
+              </Alert>
+            )}
+            {!quiz.published && (
+              <Alert variant="warning" className="mt-3 mb-0">
+                This quiz is not published yet.
+              </Alert>
+            )}
+            </>
         )}
+
+        
       </Card>
     </Container>
   );
