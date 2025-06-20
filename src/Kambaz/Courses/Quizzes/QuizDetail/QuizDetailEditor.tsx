@@ -110,14 +110,12 @@ export default function QuizDetailEditor() {
     navigate(`/Kambaz/Courses/${cid}/Quizzes`);
   };
 
-  
-
   if (!isNewQuiz && !quiz) return <div>Quiz not found.</div>;
 
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>{isNewQuiz ? "New Quiz" : "Edit Quiz"}</h3>
+        <h3>{isNewQuiz ? "New Quiz" : "Edit Quiz"} {quiz?.title}</h3>
         <div className="d-flex align-items-center">
           <span className="me-3">Points {editedQuiz.points || 0}</span>
           <div className="d-flex align-items-center">
@@ -184,9 +182,9 @@ export default function QuizDetailEditor() {
               height: 300,
               menubar: true,
               plugins: [
-                'advlist autolink lists link image charmap print preview anchor',
-                'searchreplace visualblocks code fullscreen',
-                'insertdatetime media table paste code help wordcount'
+                "advlist", "autolink", "lists", "link", "image", "charmap", "preview", "anchor",
+                "searchreplace", "visualblocks", "code", "fullscreen",
+                "media", "table", "help", "wordcount"
               ],
               toolbar:
                 'undo redo | formatselect | ' +
@@ -274,18 +272,18 @@ export default function QuizDetailEditor() {
 
               <Form.Group className="mb-3" controlId="wd-due-date">
                 <Form.Label>Due</Form.Label>
-                  <Form.Control type="date" value={dueDate} 
+                  <Form.Control type="date" value={dueDate ? new Date(dueDate).toISOString().split("T")[0] : ""} 
                     onChange={(e) => setDueDate(e.target.value) }/>
                   </Form.Group>
                   <Row>
                     <Col>
                       <Form.Group className="mb-3" controlId="wd-available-from">Available From</Form.Group>
-                      <Form.Control type="date" value={availableFromDate} 
+                      <Form.Control type="date" value={availableFromDate ? new Date(availableFromDate).toISOString().split("T")[0] : ""} 
                       onChange={(e) => setAvailableFromDate(e.target.value)}/>
                     </Col>
                     <Col>                        
                     <Form.Group className="mb-3" controlId="wd-available-until">Until</Form.Group>
-                      <Form.Control type="date" value={availableUntilDate } 
+                      <Form.Control type="date" value={availableUntilDate ? new Date(availableUntilDate).toISOString().split("T")[0] : ""} 
                         onChange={(e) => setAvailableUntilDate(e.target.value)}/>
                     </Col>
                     

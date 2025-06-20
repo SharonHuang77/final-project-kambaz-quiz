@@ -57,7 +57,9 @@ export const createQuizForCourse = async (courseId: string, quiz: any) => {
 
 export const updateQuiz = async (quiz: any) => {
   const { data } = await axiosWithCredentials.put(`${QUIZZES_API}/${quiz._id}`, quiz);
+  console.log("Server responded with updated quiz:", data);
   return data;
+  
 };
 
 export const deleteQuiz = async (quizId: string) => {
