@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Form, Button, Row, Col } from 'react-bootstrap';
+import { Editor } from "@tinymce/tinymce-react";
 
 // Define the Question interface (or import from shared types)
 interface Question {
@@ -97,19 +98,26 @@ export default function TrueFalseEditor({
         {/* Question Text */}
         <Form.Group className="mb-3">
           <Form.Label>Question:</Form.Label>
-          <div className="border rounded">
-            <div className="border-bottom bg-light p-2 small text-muted">
-              Edit | View | Insert | Format | Tools | Table
-            </div>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={formData.question}
-              onChange={(e) => handleInputChange('question', e.target.value)}
-              placeholder="Enter your question text. Students will select if True or False is the correct answer."
-              className="border-0"
-            />
-          </div>
+          <Editor
+            apiKey="foeb8ni7rkbpo9kctear5mi485lcceuuqws0gaqtlegm4637"
+            value={formData.question}
+            init={{
+              height: 300,
+              menubar: true,
+              plugins: [
+                'advlist autolink lists link image charmap print preview anchor',
+                'searchreplace visualblocks code fullscreen',
+                'insertdatetime media table paste code help wordcount'
+              ],
+              toolbar:
+                'undo redo | formatselect | ' +
+                'bold italic underline forecolor backcolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help',
+              statusbar: true
+            }}
+            onEditorChange={(content) => handleInputChange('question', content)}
+          />
         </Form.Group>
 
         {/* True/False Selection */}

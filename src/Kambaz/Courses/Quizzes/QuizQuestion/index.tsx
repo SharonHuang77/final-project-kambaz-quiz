@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Button, Row, Col } from 'react-bootstrap';
+import { Button, Row, Col, Nav } from 'react-bootstrap';
+import { FaBan, FaCheckCircle } from "react-icons/fa";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import MultipleChoiceEditor from './MultipleChoiceEditor';
 import TrueFalseEditor from './TrueFalseEditor';
 import FillInTheBlankEditor from './FillInTheBlankEditor';
 import * as questionsClient from './client';
+import * as quizDetailClient from '../QuizDetail/client';
 import { setQuestions, addQuestion, deleteQuestion } from './reducer';
 import type { Question } from './reducer';
+import type { Quiz } from "../../../types.ts";
 
 export default function QuizQuestionsEditor() {
   const { cid, qid } = useParams<{ cid: string; qid: string }>();
@@ -21,9 +25,12 @@ export default function QuizQuestionsEditor() {
   const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
   const [totalPoints, setTotalPoints] = useState<number>(0);
 
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+
   useEffect(() => {
     if (qid) {
       loadQuestions();
+      loadQuiz();
     }
   }, [qid]);
 
@@ -31,6 +38,16 @@ export default function QuizQuestionsEditor() {
     const total = questions?.reduce((sum: number, q: Question) => sum + (q.points || 0), 0) || 0;
     setTotalPoints(total);
   }, [questions]);
+
+  const loadQuiz = async () => {
+    if (!qid) return;
+    try {
+      const quizData = await quizDetailClient.findQuizById(qid);
+      setQuiz(quizData);
+    } catch (error) {
+      console.error("Error loading quiz:", error);
+    }
+  };
 
   const loadQuestions = async () => {
     if (!qid) return;
@@ -48,27 +65,24 @@ export default function QuizQuestionsEditor() {
     }
   };
 
-  const createAndEditQuestion = async () => {
+  const createAndEditQuestion = () => {
     if (!isFaculty || !qid) return;
-    try {
-      const type: Question['type'] = 'multiple-choice';
-      let newQuestion: any = {
-        title: 'New Question',
-        type,
-        question: 'New question text',
-        points: 1,
-        quiz: qid,
-        choices: ['', '', '', ''],
-        correctAnswer: 0,
-      };
-
-      const saved = await questionsClient.createQuestion(qid, newQuestion);
-      dispatch(addQuestion({ ...saved, isEditing: true }));
-      setEditingQuestion(saved._id);
-    } catch (error) {
-      console.error('❌ Failed to create question on server:', error);
-      alert("Failed to save new question. Please ensure you're logged in as faculty.");
-    }
+  
+    const tempId = `temp-${Date.now()}`;
+    const tempQuestion: Question = {
+      _id: tempId,
+      title: "New Question",
+      type: "multiple-choice",
+      question: "New question text",
+      points: 1,
+      quiz: qid,
+      choices: ['', '', '', ''],
+      correctAnswer: 0,
+      isEditing: true
+    };
+  
+    dispatch(addQuestion(tempQuestion));
+    setEditingQuestion(tempId);
   };
 
   const handleEditQuestion = (questionId: string) => {
@@ -83,24 +97,40 @@ export default function QuizQuestionsEditor() {
 
   const handleSaveQuestion = async (questionData: Question) => {
     if (!qid || !questionData._id) return;
+  
     try {
-      const { isEditing, ...toSave } = questionData;
-      const updated = await questionsClient.updateQuestion(questionData._id, toSave);
-      const updatedQuestions = questions?.map((q: Question) =>
+      const { isEditing, _id, ...toSave } = questionData;
+  
+      let updated;
+      if (_id.startsWith("temp-")) {
+        // It's a new question → create
+        updated = await questionsClient.createQuestion(qid, toSave);
+      } else {
+        // It's an existing question → update
+        updated = await questionsClient.updateQuestion(_id, toSave);
+      }
+  
+      const updatedQuestions = questions.map((q: Question) =>
         q._id === questionData._id ? { ...updated, isEditing: false } : q
-      ) || [];
+      );
       dispatch(setQuestions(updatedQuestions));
       setEditingQuestion(null);
     } catch (error) {
-      console.error('Error saving question:', error);
+      console.error("Error saving question:", error);
     }
   };
 
   const handleCancelEdit = (questionId: string) => {
-    const updatedQuestions = questions?.map((q: Question) =>
-      q._id === questionId ? { ...q, isEditing: false } : q
-    ) || [];
-    dispatch(setQuestions(updatedQuestions));
+    const isTemp = questionId.startsWith("temp-");
+    if (isTemp) {
+      const updatedQuestions = questions.filter((q: Question) => q._id !== questionId);
+      dispatch(setQuestions(updatedQuestions));
+    } else {
+      const updatedQuestions = questions.map((q: Question) =>
+        q._id === questionId ? { ...q, isEditing: false } : q
+      );
+      dispatch(setQuestions(updatedQuestions));
+    }
     setEditingQuestion(null);
   };
 
@@ -201,15 +231,64 @@ export default function QuizQuestionsEditor() {
 
   return (
     <div className="container-fluid">
-      <Row className="mb-4">
-        <Col>
-          <h2>Quiz Questions</h2>
-        </Col>
-        <Col xs="auto" className="text-end">
-          <div className="h5 mb-0">Points: {totalPoints}</div>
-          <small className="text-muted">Not Published</small>
-        </Col>
-      </Row>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3>Edit Quiz {quiz?.title} </h3>
+        <div className="d-flex align-items-center">
+          <span className="me-3">Points {totalPoints || 0}</span>
+          <div
+            className="d-flex align-items-center me-3"
+            style={{
+              opacity: 0.5,
+              transition: "opacity 0.3s ease",
+            }}
+          >
+          <div
+            className="d-flex align-items-center me-3"
+            style={{ 
+              opacity: quiz?.published ? 1 : 0.5,
+              transition: 'opacity 0.3s ease'
+            }}
+          >
+            {quiz?.published ? (
+              <>
+                <FaCheckCircle className="me-2 text-success" />
+                <span className="text-success">Published</span>
+              </>
+            ) : (
+              <>
+                <FaBan className="me-2 text-danger" />
+                <span className="text-danger">Not Published</span>
+              </>
+            )}
+          </div>
+
+          </div>
+          <BsThreeDotsVertical />
+          <Button variant="link" className="p-0">
+            <i className="bi bi-three-dots-vertical"></i>
+          </Button>
+        </div>
+      </div>
+
+      <Nav variant="tabs" className="mb-4">
+        <Nav.Item>
+          <Nav.Link
+            active={false}
+            onClick={() => {
+              if (qid && cid) {
+                navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/Editor`);
+              }
+            }}
+          >
+            Details
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link active={true}>
+            Questions
+          </Nav.Link>
+        </Nav.Item>
+      </Nav>
 
       <Row>
         <Col>

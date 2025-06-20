@@ -250,12 +250,13 @@ export default function Quizzes() {
         })}
       </ListGroup>
     </div>
-        {/* TEMPORARY DEBUG SECTION */}
+        {/* TEMPORARY DEBUG SECTION
         <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
           <Link to={`/Kambaz/Courses/${cid}/Quizzes/quiz123/Questions`}>
             <strong>[ GO TO QUESTIONS EDITOR ]</strong>
           </Link>
-        </div>
+        </div> */}
+    <br></br><br></br>
     </div>
     
   );
