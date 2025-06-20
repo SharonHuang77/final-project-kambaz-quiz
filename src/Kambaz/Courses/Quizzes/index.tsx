@@ -6,13 +6,14 @@ import { useEffect, useState } from "react";
 
 import { Button, FormControl, InputGroup, ListGroup } from "react-bootstrap";
 import { FaPlus, FaSearch } from "react-icons/fa";
-import { BsGripVertical } from "react-icons/bs";
+import { BsFillRocketTakeoffFill, BsGripVertical } from "react-icons/bs";
 //import { BsThreeDotsVertical } from "react-icons/bs";
-import AssignmentControl from "../Assignments/AssignmentControl";
-import { LuNotebookPen } from "react-icons/lu";
-import GreenCheckMarks from "./QuizDetail/GreenCheckMarks";
+// import AssignmentControl from "../Assignments/AssignmentControl";
+// import { LuNotebookPen } from "react-icons/lu";
+// import GreenCheckMarks from "./QuizDetail/GreenCheckMarks";
 import { setQuizzes, deleteQuiz, editQuiz} from "./QuizDetail/reducer";
 import QuizListControl from "./QuizDetail/QuizControl";
+import QuizzesControl from "./QuizDetail/QuizzesControl";
 
 
 export default function Quizzes() {
@@ -133,13 +134,6 @@ export default function Quizzes() {
               alert('No quiz available to delete');
             }
             break;
-          case 'publish':
-            alert('Publish all quizzes - to be implemented');
-            break;
-          case 'unpublish':
-            // Unpublish all quizzes
-            alert('Unpublish all quizzes - to be implemented');
-            break;
         }
       }}/>
       </>
@@ -168,12 +162,16 @@ export default function Quizzes() {
         )}
 
         {filteredQuizzes.map((quiz: any) => {
+          if (!isFaculty && !quiz.published) {
+            return null;
+          } 
           const now = new Date();
           const availableFrom = new Date(quiz.availableFromDate);
           const availableUntil = new Date(quiz.availableUntilDate || quiz.dueDate);
           
           const isAvailable = now >= availableFrom && now <= availableUntil;
           const notYetAvailable = now < availableFrom;
+          const isClosed = now > availableUntil;
 
           return (
             <ListGroup.Item
@@ -182,7 +180,7 @@ export default function Quizzes() {
             >
               <div className="d-flex me-3">
                 <BsGripVertical className="me-2 fs-4" />
-                <LuNotebookPen className="fs-4 text-success" />
+                <BsFillRocketTakeoffFill className="fs-4 text-success" />
               </div>
               
               <div className="flex-grow-1">
@@ -204,9 +202,16 @@ export default function Quizzes() {
                   
                   {isAvailable && (
                     <>
-                      Available <span>Multiple Dates</span>
+                      <span className="text-success">Available</span>
                     </>
                   )}
+                  {isClosed && (
+                    <>
+                      <span className="text-danger"><b>Closed</b></span>
+                    </>
+                  )}
+                  
+                 
                   
                   <span className="text-dark">
                     {" | "}
@@ -230,16 +235,12 @@ export default function Quizzes() {
               </div>
 
               <div className="d-flex align-items-center">
-                {quiz.score !== undefined && (
-                  <div className="me-2">
-                    <GreenCheckMarks />
-                  </div>
-                )}
+                
                 {isFaculty && (
                   <div className="ms-auto">
-                    <AssignmentControl 
-                      assignmentId={quiz._id} 
-                      deleteAssignment={() => handleDeleteQuiz(quiz._id)} 
+                    <QuizzesControl 
+                      quizId={quiz._id} 
+                      deleteQuiz={handleDeleteQuiz} 
                     />
                   </div>
                 )}

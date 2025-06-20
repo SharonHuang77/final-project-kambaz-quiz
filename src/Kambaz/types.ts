@@ -11,7 +11,7 @@ export interface User {
   role?: string;
 }
 export interface Quiz {
-  _id: string;
+  _id?: string;
   title: string;
   course: string;
   published?: any;
@@ -24,7 +24,7 @@ export interface Quiz {
   shuffleAnswers?: boolean;
   timeLimit?: boolean;
   multipleAttempts?: boolean;
-  
+  timeLimitMinutes?: number;
 
   availableFromDate?: string;
   availableUntilDate?: string;
