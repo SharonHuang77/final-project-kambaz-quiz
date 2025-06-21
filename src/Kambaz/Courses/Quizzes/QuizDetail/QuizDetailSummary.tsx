@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import { Button, Card, Container, Row, Col, Alert } from "react-bootstrap";
+import { Button, Card, Container, Row, Col, Alert, Alert } from "react-bootstrap";
 import * as quizzesClient from "../../client";
 import * as questionsClient from "../QuizQuestion/client";
+
 
 export default function QuizDetailSummary() {
   const { cid, qid } = useParams();
