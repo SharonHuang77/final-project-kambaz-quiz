@@ -14,25 +14,33 @@ export interface Quiz {
   _id?: string;
   title: string;
   course: string;
-  published?: any;
+  published?: boolean;
   description?: string;
   quizType?:                     
     | "Graded Quiz"
     | "Practice Quiz"
     | "Graded Survey"
     | "Ungraded Survey";
+  assignmentGroup?: string; 
   shuffleAnswers?: boolean;
-  timeLimit?: boolean;
+  timeLimit?: number;
   multipleAttempts?: boolean;
   timeLimitMinutes?: number;
   howManyAttempts?: number; // fix 
-
+  showCorrectAnswers?: boolean;
+  oneQuestionAtATime?: boolean;
+  webcamRequired?: boolean;
+  lockQuestionsAfterAnswering?: boolean;
+  accessCode?: string;
   availableFromDate?: string;
   availableUntilDate?: string;
   dueDate?: string;
   points?: number;
   numberOfQuestions?: number;
   score?: number;
+
+  timeLimitEnabled?: boolean;
+  
   
 }
 export interface RootState {

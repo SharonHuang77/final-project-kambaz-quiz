@@ -21,6 +21,7 @@ export default function QuizDetailEditor() {
   const [activeTab] = useState("details");
 
   const [editorContent, setEditorContent] = useState("");
+  const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
   
 
   const [editedQuiz, setEditedQuiz] = useState<Quiz>({
@@ -32,10 +33,11 @@ export default function QuizDetailEditor() {
     quizType: "Graded Quiz",
     published: false,
     shuffleAnswers: false,
-    timeLimit: false,
+    timeLimitMinutes: 20,
     multipleAttempts: false,
     howManyAttempts: 1,
-    description: ""
+    description: "",
+    assignmentGroup: "Quizzes"
   });
   const [dueDate, setDueDate] = useState("");
   const [availableFromDate, setAvailableFromDate] = useState("");
@@ -43,7 +45,12 @@ export default function QuizDetailEditor() {
 
   useEffect(() => {
     if (!isNewQuiz && quiz) {
-      setEditedQuiz({ ...quiz });
+      const hasTimeLimit = !!(quiz.timeLimit && quiz.timeLimit > 0);
+      setEditedQuiz({
+        ...quiz,
+        timeLimitMinutes: hasTimeLimit ? quiz.timeLimit : 20
+      });
+      setTimeLimitEnabled(hasTimeLimit);
       setEditorContent(quiz.description || "");
 
       if (quiz.dueDate) setDueDate(quiz.dueDate);
@@ -66,8 +73,13 @@ export default function QuizDetailEditor() {
       availableUntilDate,
       published: false ,
       description: editorContent,
-      howManyAttempts: editedQuiz.multipleAttempts ? (editedQuiz.howManyAttempts || 1) : 1
+      timeLimit: timeLimitEnabled ? (editedQuiz.timeLimitMinutes || 20) : 0,
+      howManyAttempts: editedQuiz.multipleAttempts ? (editedQuiz.howManyAttempts || 1) : 1,
+      assignmentGroup: editedQuiz.assignmentGroup || "Quizzes"
     };
+    delete quizData.timeLimitEnabled;
+    delete quizData.timeLimitMinutes;
+
     if (isNewQuiz) {
         const newQuiz = await quizzesClient.createQuizForCourse(cid!, quizData);
         dispatch(addQuiz(newQuiz));
@@ -93,8 +105,12 @@ export default function QuizDetailEditor() {
       availableUntilDate,
       published: true,
       description: editorContent, 
-      howManyAttempts: editedQuiz.multipleAttempts ? (editedQuiz.howManyAttempts || 1) : 1
+      timeLimit: timeLimitEnabled ? (editedQuiz.timeLimitMinutes || 20) : 0,
+      howManyAttempts: editedQuiz.multipleAttempts ? (editedQuiz.howManyAttempts || 1) : 1,
+      assignmentGroup: editedQuiz.assignmentGroup || "Quizzes"
     };
+    delete quizData.timeLimitEnabled;
+    delete quizData.timeLimitMinutes;
     if (isNewQuiz) {
       const newQuiz = await quizzesClient.createQuizForCourse(cid!, quizData);
         dispatch(addQuiz(newQuiz));
@@ -212,7 +228,8 @@ export default function QuizDetailEditor() {
 
             <Form.Group as={Row} className="mb-3" controlId="wd-submission-type">
               <Form.Label>Assignment Group</Form.Label>            
-              <Form.Select defaultValue="Quizzes">
+              <Form.Select value={editedQuiz.assignmentGroup || "Quizzes"}
+                onChange={(e) => handleChange("assignmentGroup", e.target.value)}>
                 <option value="Quizzes">Quizzes</option>
                 <option value="Exams">Exams</option>
                 <option value="Assignments">Assignments</option>
@@ -235,17 +252,23 @@ export default function QuizDetailEditor() {
                     type="checkbox"
                     id="wd-time-limit"
                     label="Time Limit"
-                    checked={editedQuiz.timeLimit || false}
-                    onChange={(e) => handleChange("timeLimit", e.target.checked)}
+                    checked={timeLimitEnabled}
+                    onChange={(e) => {
+                      setTimeLimitEnabled(e.target.checked);
+                      if (!e.target.checked) {
+                        handleChange("timeLimitMinutes", 20);
+                      }
+
+                    }}
                   />
                 </Col>
                 <Col xs="auto">
                   <Form.Control
                     type="number"
                     min={1}
-                    value={editedQuiz.timeLimitMinutes || ""}
-                    disabled={!editedQuiz.timeLimit}
-                    onChange={(e) => handleChange("timeLimitMinutes", parseInt(e.target.value))}
+                    value={editedQuiz.timeLimitMinutes || 20}
+                    disabled={!timeLimitEnabled}
+                    onChange={(e) => handleChange("timeLimitMinutes", parseInt(e.target.value) || 20)}
                     placeholder="Minutes"
                     style={{ width: "100px", display: "inline" }}
                   />

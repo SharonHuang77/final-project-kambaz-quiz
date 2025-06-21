@@ -127,13 +127,19 @@ export default function QuizDetailSummary() {
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">Time Limit</Col>
-          <Col sm={8}>{quiz.timeLimit || "20 Minutes"}</Col>
+          <Col sm={8}>{quiz.timeLimit && quiz.timeLimit > 0 ? `${quiz.timeLimit} Minutes` : "No Limit"}</Col>
         </Row>
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">Multiple Attempts</Col>
-          <Col sm={8}>{quiz.multipleAttempts || "No"}</Col>
+          <Col sm={8}>{quiz.multipleAttempts ? "Yes" : "No"}</Col>
         </Row>
+            {quiz.multipleAttempts && (
+              <Row className="mb-3">
+                <Col sm={4} className="text-end fw-bold">Allowed Attempts</Col>
+                <Col sm={8}>{quiz.howManyAttempts || 1}</Col>
+              </Row>
+            )}
         
         <Row className="mb-3">
           <Col sm={4} className="text-end fw-bold">View Responses</Col>
