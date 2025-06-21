@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Check, X, Clock } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as quizzesResultClient from './client';
+import { Button } from 'react-bootstrap';
 
-// Type guard to check if quiz data is valid
+
 const isValidQuizData = (data: any): boolean => {
   return data && 
          typeof data === 'object' && 
@@ -17,6 +18,8 @@ export default function QuizResults() {
   const [quizData, setQuizData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  
 
   useEffect(() => {
     let isMounted = true;
@@ -84,6 +87,18 @@ export default function QuizResults() {
     );
   }
 
+  const now = new Date();
+  const dueDate = quizData.dueDate ? new Date(quizData.dueDate) : null;
+
+  const maxAttemptsReached =
+    !quizData.multipleAttempts ||
+    (quizData.attemptHistory?.length || 0) >= (quizData.maxAttempts || 1);
+
+  const isPastDue = dueDate !== null && now > dueDate;
+
+  // Show answers only if due date has passed OR all attempts are used
+  const canRevealAnswers = maxAttemptsReached || isPastDue;
+
   // Now TypeScript knows quizData is valid
   const hasAttempts = quizData.currentAttempt && quizData.attemptHistory && quizData.attemptHistory.length > 0;
   const questions = quizData.currentAttempt?.questions || [];
@@ -122,8 +137,33 @@ export default function QuizResults() {
            quizData.attemptHistory.length < (quizData.maxAttempts || 1);
   };
 
+  const getHighestScore = (): { max: number; maxTotalPoints: number } => {
+    if (!quizData.attemptHistory || quizData.attemptHistory.length === 0) {
+      return { max: 0, maxTotalPoints: 0 };
+    }
+  
+    let max = 0;
+    let maxTotalPoints = 0;
+  
+    quizData.attemptHistory.forEach((attempt: any) => {
+      if (attempt.score > max) {
+        max = attempt.score;
+        maxTotalPoints = attempt.totalPoints;
+      }
+    });
+  
+    return { max, maxTotalPoints };
+  };
+
+
+
   return (
     <div className="container-fluid">
+      {!canRevealAnswers && (
+        <div className="alert alert-warning">
+          <strong>Note:</strong> Correct answers are hidden until you finish all allowed attempts or after the due date passes.
+        </div>
+      )}
       <div className="row">
         <div className="col-8">
           
@@ -199,9 +239,19 @@ export default function QuizResults() {
           
           <br /><br />
 
-          {canRetakeQuiz() && (
-              <button className="btn btn-primary d-block mx-auto">Take Quiz Again</button>
-            )}
+          {canRetakeQuiz() ? (
+            <Button
+              variant="primary"
+              className="d-block mx-auto"
+              onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}`)}
+            >
+              Take Quiz Again
+            </Button>
+          ) : (
+            <Button variant="secondary" className="d-block mx-auto" disabled>
+              Exceeds Attempt Limit
+            </Button>
+          )}
 
           <br /><br />
 
@@ -243,14 +293,17 @@ export default function QuizResults() {
                     <div>
                       {question.options.map((option: string, index: number) => {
                         const isStudentAnswer = index === question.studentAnswer;
-                        const isCorrectAnswer = option === question.correctAnswer;
-                        const isWrongSelection = isStudentAnswer && !question.isCorrect;
+                        const isCorrectAnswer = canRevealAnswers && option === question.correctAnswer;
+                        const isStudentCorrect = isStudentAnswer && question.isCorrect;
+                        const isStudentWrong = isStudentAnswer && !question.isCorrect;
                         
                         return (
                           <div key={index} className={`p-2 mb-2 ${
                             isCorrectAnswer
                               ? 'bg-success bg-opacity-25 border-start border-success border-4'
-                              : isWrongSelection
+                              : isStudentCorrect
+                              ? 'bg-success bg-opacity-25 border-start border-success border-4'
+                              : isStudentWrong
                               ? 'bg-danger bg-opacity-25 border-start border-danger border-4'
                               : 'bg-light border-start border-secondary border-4'
                           }`}>
@@ -269,13 +322,16 @@ export default function QuizResults() {
                                 {isStudentAnswer && (
                                   <span className="badge bg-secondary me-2">Your Answer</span>
                                 )}
-                                {isCorrectAnswer && (
+                                {canRevealAnswers && isCorrectAnswer && (
                                   <>
                                     <span className="badge bg-success me-2">Correct Answer</span>
                                     <Check size={16} className="text-success" />
                                   </>
                                 )}
-                                {isWrongSelection && (
+                                {isStudentCorrect && (
+                                  <Check size={16} className="text-success" />
+                                )}
+                                {isStudentWrong && (
                                   <X size={16} className="text-danger" />
                                 )}
                               </div>
@@ -291,14 +347,17 @@ export default function QuizResults() {
                     <div>
                       {['True', 'False'].map((option: string) => {
                         const isStudentAnswer = option.toLowerCase() === String(question.studentAnswer).toLowerCase();
-                        const isCorrectAnswer = option.toLowerCase() === String(question.correctAnswer).toLowerCase();
-                        const isWrongSelection = isStudentAnswer && !question.isCorrect;
+                        const isCorrectAnswer = canRevealAnswers && option.toLowerCase() === String(question.correctAnswer).toLowerCase();
+                        const isStudentCorrect = isStudentAnswer && question.isCorrect;
+                        const isStudentWrong = isStudentAnswer && !question.isCorrect;
                         
                         return (
                           <div key={option} className={`p-2 mb-2 ${
                             isCorrectAnswer
                               ? 'bg-success bg-opacity-25 border-start border-success border-4'
-                              : isWrongSelection
+                              : isStudentCorrect
+                              ? 'bg-success bg-opacity-25 border-start border-success border-4'
+                              : isStudentWrong
                               ? 'bg-danger bg-opacity-25 border-start border-danger border-4'
                               : 'bg-light border-start border-secondary border-4'
                           }`}>
@@ -317,13 +376,16 @@ export default function QuizResults() {
                                 {isStudentAnswer && (
                                   <span className="badge bg-secondary me-2">Your Answer</span>
                                 )}
-                                {isCorrectAnswer && (
+                                {canRevealAnswers && isCorrectAnswer && (
                                   <>
                                     <span className="badge bg-success me-2">Correct Answer</span>
                                     <Check size={16} className="text-success" />
                                   </>
                                 )}
-                                {isWrongSelection && (
+                                {isStudentCorrect && (
+                                  <Check size={16} className="text-success" />
+                                )}
+                                {isStudentWrong && (
                                   <X size={16} className="text-danger" />
                                 )}
                               </div>
@@ -356,7 +418,7 @@ export default function QuizResults() {
                         </div>
                       </div>
                       
-                      {!question.isCorrect && question.possibleAnswers && (
+                      {canRevealAnswers && !question.isCorrect && question.possibleAnswers && (
                         <div>
                           <p><strong>Accepted Answers:</strong></p>
                           <div className="p-2 mb-2 bg-success bg-opacity-25 border-start border-success border-4">
@@ -376,50 +438,11 @@ export default function QuizResults() {
                         </div>
                       )}
 
-                      {question.isCorrect && question.possibleAnswers && Array.isArray(question.possibleAnswers) && question.possibleAnswers.length > 1 && (
+                      {canRevealAnswers && question.isCorrect && question.possibleAnswers && Array.isArray(question.possibleAnswers) && question.possibleAnswers.length > 1 && (
                         <div className="mt-2">
                           <p className="text-muted">
                             <small><strong>Other accepted answers:</strong> {question.possibleAnswers.filter((ans: string) => ans !== question.studentAnswer).join(', ')}</small>
                           </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Answer Display for Short Answer */}
-                  {question.type === 'short-answer' && (
-                    <div>
-                      <p><strong>Your Answer:</strong></p>
-                      <div className={`p-2 mb-2 ${
-                        question.isCorrect
-                          ? 'bg-success bg-opacity-25 border-start border-success border-4'
-                          : 'bg-danger bg-opacity-25 border-start border-danger border-4'
-                      }`}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span>{question.studentAnswer || 'No answer provided'}</span>
-                          <div className="d-flex align-items-center">
-                            <span className="badge bg-secondary me-2">Your Answer</span>
-                            {question.isCorrect ? (
-                              <Check size={16} className="text-success" />
-                            ) : (
-                              <X size={16} className="text-danger" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {!question.isCorrect && question.correctAnswer && (
-                        <div>
-                          <p><strong>Correct Answer:</strong></p>
-                          <div className="p-2 mb-2 bg-success bg-opacity-25 border-start border-success border-4">
-                            <div className="d-flex justify-content-between align-items-center">
-                              <span>{question.correctAnswer}</span>
-                              <div className="d-flex align-items-center">
-                                <span className="badge bg-success me-2">Correct Answer</span>
-                                <Check size={16} className="text-success" />
-                              </div>
-                            </div>
-                          </div>
                         </div>
                       )}
                     </div>
@@ -434,9 +457,9 @@ export default function QuizResults() {
           {/* Bottom Navigation */}
           <div className="d-flex justify-content-between align-items-center">
             <h4>Quiz Score: {quizData.currentAttempt?.score || 0} out of {quizData.currentAttempt?.totalPoints || 0}</h4>
-            {/* <button className="btn btn-outline-secondary" onClick={goBackToQuizzes}>
+            <Button variant="primary" onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}>
               Back to Quiz List
-            </button> */}
+            </Button>
           </div>
           
           <br /><br />
@@ -468,13 +491,18 @@ export default function QuizResults() {
               
               <br />
 
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-success" style={{width: '16px', height: '16px', marginRight: '8px'}}></div>
-                <div>
-                  <p className="mb-0"><strong>Kept Score:</strong></p>
-                  <p className="mb-0 text-muted">{quizData.currentAttempt?.score || 0} out of {quizData.currentAttempt?.totalPoints || 0}</p>
-                </div>
-              </div>
+              {(() => {
+                  const { max, maxTotalPoints } = getHighestScore();
+                  return (
+                    <div className="d-flex align-items-center mb-2">
+                      <div className="bg-success" style={{ width: '16px', height: '16px', marginRight: '8px' }}></div>
+                      <div>
+                        <p className="mb-0"><strong>Kept Score:</strong></p>
+                        <p className="mb-0 text-muted">{max} out of {maxTotalPoints}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
             </div>
           </div>

@@ -124,33 +124,35 @@ export default function TrueFalseEditor({
         <Form.Group className="mb-3">
           <Form.Label>Correct Answer:</Form.Label>
           <div className="ms-3">
-            <Form.Check
-              type="radio"
-              id="true-answer"
-              name="correctAnswer"
-              label={
-                <span>
-                  {formData.correctAnswer === true && <span className="text-success me-2">✓</span>}
-                  True
-                </span>
-              }
-              checked={formData.correctAnswer === true}
-              onChange={() => handleInputChange('correctAnswer', true)}
-            />
+            <div className="d-flex align-items-center mb-2">
+              <Form.Check
+                type="radio"
+                id="true-answer"
+                name="correctAnswer"
+                label="True"
+                checked={formData.correctAnswer === true}
+                onChange={() => handleInputChange('correctAnswer', true)}
+                className="me-3"
+              />
+              {formData.correctAnswer === true && (
+                <span className="text-success fw-bold">✓ Correct Answer</span>
+              )}
+            </div>
             
-            <Form.Check
-              type="radio"
-              id="false-answer"
-              name="correctAnswer"
-              label={
-                <span>
-                  {formData.correctAnswer === false && <span className="text-success me-2">✓</span>}
-                  False
-                </span>
-              }
-              checked={formData.correctAnswer === false}
-              onChange={() => handleInputChange('correctAnswer', false)}
-            />
+            <div className="d-flex align-items-center">
+              <Form.Check
+                type="radio"
+                id="false-answer"
+                name="correctAnswer"
+                label="False"
+                checked={formData.correctAnswer === false}
+                onChange={() => handleInputChange('correctAnswer', false)}
+                className="me-3"
+              />
+              {formData.correctAnswer === false && (
+                <span className="text-success fw-bold">✓ Correct Answer</span>
+              )}
+            </div>
           </div>
         </Form.Group>
 
