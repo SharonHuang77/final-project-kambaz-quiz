@@ -476,7 +476,7 @@ const handleAnswer = (qid: string, value: any) => {
               </Col>  
               </Row><hr />
 
-            <Button variant="primary" onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}>
+            <Button variant="primary" onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}`)}>
               Back to Quizzes
             </Button>
           </Alert>
