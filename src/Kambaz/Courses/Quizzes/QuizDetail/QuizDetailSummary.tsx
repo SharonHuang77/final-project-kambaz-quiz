@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import { Button, Card, Container, Row, Col, Alert, Alert } from "react-bootstrap";
+import { Button, Card, Container, Row, Col, Alert } from "react-bootstrap";
 import * as quizzesClient from "../../client";
 import * as questionsClient from "../QuizQuestion/client";
 
@@ -28,35 +28,77 @@ export default function QuizDetailSummary() {
       }
       
       try {
-       // Fetch questions to calculate total points
-       const questions = await questionsClient.getQuestions(qid);
-         if (questions && questions.length > 0) {
-           const total = questions.reduce((sum: number, question: any) => {
+        // Fetch questions to calculate total points
+        const questions = await questionsClient.getQuestions(qid);
+        if (questions && questions.length > 0) {
+          const total = questions.reduce((sum: number, question: any) => {
             return sum + (question.points || 0);
-           }, 0);
-           setTotalPoints(total);
-          } else {
-            setTotalPoints(0);
-           }
+          }, 0);
+          setTotalPoints(total);
+        } else {
+          setTotalPoints(0);
+        }
         
-         // Fetch student's attempt count
+        // Fetch student's attempt count
         if (currentUser) {
-          const results = await quizzesClient.findQuizResultsForStudent(qid, currentUser._id);
-          const attempts = results?.length || 0;
-          setAttemptCount(attempts);
-          
-          // Check if student can take quiz
-          const allowedAttempts = quiz.howManyAttempts || 1;
-          setCanTakeQuiz(attempts < allowedAttempts);
+          try {
+            console.log("🔄 Fetching quiz results for student:", currentUser._id, "quiz:", qid);
+            
+            const results = await quizzesClient.findQuizResultsForStudent(qid, currentUser._id);
+            console.log("✅ Fetched results:", results);
+            
+            // Handle successful response
+            if (results && results.attemptHistory) {
+              const attempts = results.attemptHistory.length || 0;
+              setAttemptCount(attempts);
+              
+              // Check if student can take quiz
+              const allowedAttempts = quiz.howManyAttempts || 1;
+              setCanTakeQuiz(attempts < allowedAttempts);
+              
+              console.log("📊 Current attempt count:", attempts);
+              console.log("📊 Allowed attempts:", allowedAttempts);
+              console.log("📊 Can take quiz:", attempts < allowedAttempts);
+            } else {
+              // Results exist but no attempt history
+              console.log("📊 Results found but no attempt history");
+              setAttemptCount(0);
+              setCanTakeQuiz(true);
+            }
+            
+          } catch (error: any) {
+            console.log("⚠️ Error fetching quiz results:", error);
+            
+            // Check if it's a 404 (no results found) - this is OK for first attempt
+            if (error.response?.status === 404) {
+              console.log("📊 No previous attempts found (404) - student can take quiz");
+              setAttemptCount(0);
+              setCanTakeQuiz(true);
+            } else if (error.response?.data?.hasAttempts === false) {
+              // Our new API returns this when no attempts exist
+              console.log("📊 No attempts found (hasAttempts: false) - student can take quiz");
+              setAttemptCount(0);
+              setCanTakeQuiz(true);
+            } else {
+              // Other errors - be conservative but allow quiz taking
+              console.error("❌ Unexpected error fetching attempt data:", error);
+              setAttemptCount(0);
+              setCanTakeQuiz(true); // Default to allowing quiz
+            }
+          }
         }
       } catch (error) {
-        console.error("Error fetching attempt data:", error);
+        console.error("❌ Error fetching quiz data:", error);
+        // Even if there's an error, allow the student to attempt the quiz
+        setCanTakeQuiz(true);
       } finally {
         setLoading(false);
       }
     };
+    
     fetchData();
   }, [qid, quiz, currentUser, isFaculty]);
+
 
   if (!quiz) return <div>Quiz not found.</div>;
 

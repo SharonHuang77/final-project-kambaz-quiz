@@ -194,7 +194,7 @@ const handleAnswer = (qid: string, value: any) => {
           submittedAt: endTime
         });
         console.log("Quiz submission saved to DB.");
-        navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/Results/${currentUser._id}`);
+        //navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/Results/${currentUser._id}`);
       } catch (error) {
         console.error("Error saving quiz submission:", error);
         setError("Failed to save quiz submission. Your answers may not have been recorded.");
