@@ -9,10 +9,10 @@ export default function TOC() {
                 <Nav.Link to="/Kambaz" as={Link} id="wd-a3">Kambaz</Nav.Link> 
             </Nav.Item> 
             <Nav.Item> 
-                <Nav.Link href="https://github.com/SharonHuang77/final-project-node-server/tree/sharon" target="_blank">GitHub Node</Nav.Link> 
+                <Nav.Link href="https://github.com/SharonHuang77/final-project-node-server/tree/main" target="_blank">GitHub Node</Nav.Link> 
             </Nav.Item>
             <Nav.Item> 
-                <Nav.Link href="https://github.com/SharonHuang77/final-project-kambaz-quiz/tree/sharon" target="_blank">GitHub React</Nav.Link> 
+                <Nav.Link href="https://github.com/SharonHuang77/final-project-kambaz-quiz/tree/main" target="_blank">GitHub React</Nav.Link> 
             </Nav.Item>
         </Nav>
         
