@@ -4,7 +4,7 @@ import { BiHelpCircle } from "react-icons/bi";
 import { FaInbox } from "react-icons/fa";
 import { FaRegCircleUser } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
-import { LiaBookSolid, LiaCogSolid } from "react-icons/lia";
+import { LiaBookSolid } from "react-icons/lia";
 import { Link, useLocation } from "react-router-dom";
 export default function KambazNavigation() {
   const { pathname } = useLocation();
@@ -19,8 +19,8 @@ export default function KambazNavigation() {
                           icon: FaInbox },
     { label: "Help",     path: "/Kambaz/Help",
                           icon: BiHelpCircle },
-    { label: "Labs",      path: "/Labs",
-                          icon: LiaCogSolid },
+    // { label: "GitHub",      path: "/GitHUb",
+    //                       icon: LiaCogSolid },
   ];
   return (
     <ListGroup style={{width: 120}}
@@ -57,7 +57,19 @@ export default function KambazNavigation() {
             {link.icon({ className: "fs-1 text-danger"})}
           <br /> {link.label}
         </ListGroup.Item>
-        ))
-      }
+      ))}
+        <ListGroup.Item
+          as={Link}
+          to="/Kambaz/GitHub"
+          className={`text-center border-0 bg-black
+            ${pathname.includes("GitHub") ? "text-danger bg-white" : "text-white bg-black"}`}>
+          <img
+            src="/images/github.png"
+            alt="GitHub"
+            style={{ width: "40px", height: "40px", marginBottom: "5px" }}
+            />
+          <br /> GitHub
+        </ListGroup.Item>
+
     </ListGroup>
 );}
