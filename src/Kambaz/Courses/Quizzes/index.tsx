@@ -2,18 +2,17 @@ import { useParams, Link } from "react-router";
 import { useNavigate } from "react-router";
 import { useSelector, useDispatch } from "react-redux";
 import * as quizzesClient from "../client";
+import * as questionsClient from "./QuizQuestion/client"
 import { useEffect, useState } from "react";
 
 import { Button, FormControl, InputGroup, ListGroup } from "react-bootstrap";
 import { FaPlus, FaSearch } from "react-icons/fa";
-import { BsFillRocketTakeoffFill, BsGripVertical } from "react-icons/bs";
-//import { BsThreeDotsVertical } from "react-icons/bs";
-// import AssignmentControl from "../Assignments/AssignmentControl";
-// import { LuNotebookPen } from "react-icons/lu";
-// import GreenCheckMarks from "./QuizDetail/GreenCheckMarks";
-import { setQuizzes, deleteQuiz, editQuiz} from "./QuizDetail/reducer";
-import QuizListControl from "./QuizDetail/QuizControl";
+import { BsGripVertical } from "react-icons/bs";
+import { BsFillRocketTakeoffFill } from "react-icons/bs";
+
 import QuizzesControl from "./QuizDetail/QuizzesControl";
+import { setQuizzes, deleteQuiz} from "./QuizDetail/reducer";
+import QuizListControl from "./QuizDetail/QuizControl";
 
 
 export default function Quizzes() {
@@ -21,6 +20,9 @@ export default function Quizzes() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
+  const [quizScores, setQuizScores] = useState<Record<string, number>>({});
+  const [quizQuestionCounts, setQuizQuestionCounts] = useState<Record<string, number>>({});
+  const [quizTotalPoints, setQuizTotalPoints] = useState<Record<string, number>>({});
 
   const quizzesState = useSelector((state: any) => state.quizzesDetailReducer);
   const quizzes = quizzesState?.quizzes || [];
@@ -62,6 +64,53 @@ export default function Quizzes() {
     return sortedQuizzes[0];
   };
 
+// Fetch quiz scores and question counts and total points
+  useEffect(() => {
+    const fetchQuizData = async () => {
+      
+      const scores: Record<string, number> = {};
+      const questionCounts: Record<string, number> = {};
+      const totalPoints: Record<string, number> = {};
+
+      for (const quiz of filteredQuizzes) {
+        try {
+          // Fetch questions to get count and calculate total points
+          const questions = await questionsClient.getQuestions(quiz._id);
+          questionCounts[quiz._id] = questions?.length || 0;
+          
+          // Calculate total points from all questions
+          if (questions && questions.length > 0) {
+            const total = questions.reduce((sum: number, question: any) => {
+              return sum + (question.points || 0);
+            }, 0);
+            totalPoints[quiz._id] = total;
+          } else {
+            totalPoints[quiz._id] = 0;
+          }
+
+      if (!isFaculty && currentUser) {
+            const results = await quizzesClient.findQuizResultsForStudent(quiz._id, currentUser._id);
+            // Find the highest score
+            if (results && results.length > 0) {
+              const highestScore = Math.max(...results.map((r: any) => r.score || 0));
+              scores[quiz._id] = highestScore;
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching data for quiz ${quiz._id}:`, error);
+          totalPoints[quiz._id] = 0;
+          questionCounts[quiz._id] = 0;
+        }
+      }
+      setQuizScores(scores);
+      setQuizQuestionCounts(questionCounts);
+      setQuizTotalPoints(totalPoints);
+    };
+    if (filteredQuizzes.length > 0) {
+      fetchQuizData();
+    }
+  }, [filteredQuizzes, currentUser, isFaculty]);
+
 
   useEffect(() => {
     if (!cid) return;
@@ -70,7 +119,7 @@ export default function Quizzes() {
       try {
         const data = await quizzesClient.findQuizzesForCourse(cid);
         console.log("Fetched quizzes:", data);
-        dispatch(setQuizzes(data));
+        dispatch(setQuizzes(data)); 
       } catch (error) {
         console.error("Error fetching quizzes:", error);
       } finally {
@@ -79,6 +128,8 @@ export default function Quizzes() {
     };
     fetchQuizzes();
   }, [cid, dispatch]);
+
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
@@ -145,7 +196,6 @@ export default function Quizzes() {
             <span className="fw-bold">Assignment Quizzes</span>
             {isFaculty && (
               <div className="ms-auto d-flex align-items-center">
-        
               </div>
             )}
           </div>
@@ -163,11 +213,16 @@ export default function Quizzes() {
           } 
           const now = new Date();
           const availableFrom = new Date(quiz.availableFromDate);
-          const availableUntil = new Date(quiz.availableUntilDate || quiz.dueDate);
+          const dueDate = new Date(quiz.dueDate);
           
-          const isAvailable = now >= availableFrom && now <= availableUntil;
           const notYetAvailable = now < availableFrom;
-          const isClosed = now > availableUntil;
+          const isClosed = now > dueDate;
+          const isAvailable = !notYetAvailable && !isClosed;
+
+          // Get student's highest score for this quiz
+          const studentScore = !isFaculty ? quizScores[quiz._id] : undefined;
+          const questionCount = quizQuestionCounts[quiz._id] || quiz.numberOfQuestions || 0;
+          const totalPoints = quizTotalPoints[quiz._id] || quiz.points || 0;
 
           return (
             <ListGroup.Item
@@ -207,8 +262,6 @@ export default function Quizzes() {
                     </>
                   )}
                   
-                 
-                  
                   <span className="text-dark">
                     {" | "}
                     <b>Due</b> {quiz.dueMultipleDates ? (
@@ -217,13 +270,13 @@ export default function Quizzes() {
                       formatDate(quiz.dueDate)
                     )}
                     {" | "}
-                    {quiz.points || 0} pts
+                    {totalPoints} pts
                     {" | "}
-                    {quiz.numberOfQuestions || 0} Questions
-                    {quiz.score !== undefined && (
+                    {questionCount} Questions
+                    {studentScore !== undefined && (
                       <>
                         {" | "}
-                        <b>Score:</b> {quiz.score}/{quiz.points}
+                        <b>Score:</b> {studentScore}/{totalPoints}
                       </>
                     )}
                   </span>
@@ -246,16 +299,11 @@ export default function Quizzes() {
         })}
       </ListGroup>
     </div>
-    {/* TEMPORARY DEBUG SECTION
-        <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-          <Link to={`/Kambaz/Courses/${cid}/Quizzes/quiz123/Questions`}>
-            <strong>[ GO TO QUESTIONS EDITOR ]</strong>
-          </Link>
-        </div> */}
-    <br></br><br></br>
+        <br ></br>
+        <br ></br>
+        
     </div>
     
   );
 }
-
 
