@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Form, Button, Row, Col } from 'react-bootstrap';
 import { Editor } from "@tinymce/tinymce-react";
 
-// Define the Question interface (or import from shared types)
 interface Question {
   _id: string;
   title: string;

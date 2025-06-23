@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
-// Define the Question interface
 interface Question {
   _id: string;
   title: string;
@@ -17,7 +16,6 @@ interface Question {
   isEditing?: boolean;
 }
 
-// Define the initial state interface
 interface QuestionsState {
   questions: Question[];
 }
@@ -66,5 +64,4 @@ export const {
 
 export default questionsSlice.reducer;
 
-// Export types for use in components
 export type { Question, QuestionsState };

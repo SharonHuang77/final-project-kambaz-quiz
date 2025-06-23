@@ -33,13 +33,12 @@ export default function QuizPreview() {
   const checkIfCorrect = (question: any, userAnswer: any) => {
     if (userAnswer === null || userAnswer === undefined || userAnswer === '') {
       return false;
-    } //fix
+    }
     
     switch (question.type) {
       case "multiple-choice":
         return Number(userAnswer) === Number(question.correctAnswer);//fix
       case "true-false":
-        // add:Handle boolean comparison properly
         const correctBool = question.correctAnswer === true || 
                           question.correctAnswer === "true" || 
                           question.correctAnswer === 1;
@@ -47,7 +46,7 @@ export default function QuizPreview() {
                         userAnswer === "true" || 
                         userAnswer === 1;
         return correctBool === userBool;
-      case "fill-in-blank"://add
+      case "fill-in-blank":
         const userAnswerStr = String(userAnswer).trim().toLowerCase();
         return question.possibleAnswers?.some(
           (ans: string) => String(ans).trim().toLowerCase() === userAnswerStr
@@ -60,32 +59,27 @@ export default function QuizPreview() {
   useEffect(() => {
     isMountedRef.current = true;
     const fetchQuizAndQuestions = async () => {
-      //add
       if (hasFetchedRef.current || !qid) return;
       hasFetchedRef.current = true;//
       try {
         setLoading(true);
         await new Promise(resolve => setTimeout(resolve, 50));
          if (!isMountedRef.current) return;
-        // Fetch quiz details
         const quizData = await quizzesClient.findQuizById(qid!);
         console.log("Loaded quiz:", quizData);
 
         if (!isMountedRef.current) return;
         setQuiz(quizData);
-        // Fetch questions separately
         const questionsData = await questionsClient.getQuestions(qid!);
         console.log("Loaded questions:", questionsData);
         if (!isMountedRef.current) return;
         setQuestions(questionsData || []);
         
-        // add: Fetch previous attempts if student
         if (!isFaculty && currentUser?._id && isMountedRef.current) {
           try {
             const attempts = await quizzesClient.findQuizResultsForStudent(qid!, currentUser._id);
             if (!isMountedRef.current) return;
             setPreviousAttempts(attempts);
-        // Check if max attempts reached
             if (quizData.howManyAttempts && attempts.length >= quizData.howManyAttempts) {
               setError(`You have reached the maximum number of attempts (${quizData.howManyAttempts}) for this quiz.`);
               setSubmitted(true);
@@ -106,14 +100,13 @@ export default function QuizPreview() {
     };
     fetchQuizAndQuestions();
   
-    // Reset ref when component unmounts or qid changes
     return () => {
       isMountedRef.current = false;
       hasFetchedRef.current = false;
     };
   }, [qid, currentUser?._id, isFaculty]);
 
-  //Handle time
+
   useEffect(() => {
     if (!quiz || submitted || !quiz.timeLimit) return;
     const limit = (quiz.timeLimitMinutes ?? 20) * 60;
@@ -129,7 +122,6 @@ export default function QuizPreview() {
   }, 1000);
   return () => clearInterval(timer);
 }, [quiz, submitted, autoSubmitted]);
-  // Auto-submit when time runs out
   useEffect(() => {
     if (autoSubmitted && !submitted && !submitting) {
       const timeoutId = setTimeout(() => {
@@ -171,10 +163,8 @@ const handleAnswer = (qid: string, value: any) => {
 
     if (!isFaculty && currentUser?._id) {
       try {
-        // Calculate time spent
         const endTime = new Date();
-        const timeSpent = Math.floor((endTime.getTime() - startTime.getTime()) / 1000); // in seconds
-        // Format answers to match the new schema
+        const timeSpent = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
         const formattedAnswers = questions.map((q: any) => ({
           questionId: q._id,
           answer: answers[q._id] !== undefined ? answers[q._id] : null,
@@ -185,7 +175,7 @@ const handleAnswer = (qid: string, value: any) => {
         const totalPossiblePoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
         await quizzesClient.submitQuizResult(qid!, {
           studentId: currentUser._id,
-          courseId: cid!, // add: Include courseId
+          courseId: cid!,
           answers: formattedAnswers,
           score: totalScore,
           totalPoints: totalPossiblePoints || quiz.points,
@@ -194,7 +184,6 @@ const handleAnswer = (qid: string, value: any) => {
           submittedAt: endTime
         });
         console.log("Quiz submission saved to DB.");
-        //navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/Results/${currentUser._id}`);
       } catch (error) {
         console.error("Error saving quiz submission:", error);
         setError("Failed to save quiz submission. Your answers may not have been recorded.");
@@ -221,7 +210,6 @@ const handleAnswer = (qid: string, value: any) => {
     </div>
   );
 
-  // Error state
   if (error && !quiz) return (
     <Alert variant="danger">
       <FaTimesCircle className="me-2" />

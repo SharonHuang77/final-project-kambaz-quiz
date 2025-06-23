@@ -39,8 +39,3 @@ export const deleteQuestion = async (questionId: string) => {
   const response = await axiosWithCredentials.delete(`${QUESTIONS_API}/${questionId}`);
   return response.data;
 };
-
-// export const getQuiz = async (quizId: string) => {
-//   const response = await axiosWithCredentials.get(`${QUIZZES_API}/${quizId}`);
-//   return response.data;
-// };
